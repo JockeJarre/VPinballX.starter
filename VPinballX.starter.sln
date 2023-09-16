@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34024.191
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VPinballX.starter", "VPinballX.starter\VPinballX.starter.csproj", "{0E18870A-4A24-4C52-B7B0-E761BADD9D9D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Projektmappenelemente", "Projektmappenelemente", "{77FBA58F-F7F4-44F7-BDE9-149B95938ED8}"
+	ProjectSection(SolutionItems) = preProject
+		VPinballX.starter\VPinballX.starter.ico = VPinballX.starter\VPinballX.starter.ico
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0E18870A-4A24-4C52-B7B0-E761BADD9D9D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E18870A-4A24-4C52-B7B0-E761BADD9D9D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E18870A-4A24-4C52-B7B0-E761BADD9D9D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E18870A-4A24-4C52-B7B0-E761BADD9D9D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0AB51D57-F20F-4ED7-B390-A2D050E74D4E}
+	EndGlobalSection
+EndGlobal

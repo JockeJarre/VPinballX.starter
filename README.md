@@ -9,6 +9,7 @@ Using a small ini file similar to this one:
 [VPinballX.starter]
 ;DefaultVersion is used when VPinballX.starter is started without any table vpx file parameter.
 DefaultVersion=10.80
+
 [VPinballX]
 ;This Default value is used when the version set in the table vpx file isn't configured below.
 Default=VPinballX72.exe
@@ -17,7 +18,7 @@ Default=VPinballX72.exe
 10.70=VPinballX71.exe
 10.72=VPinballX72.exe
 10.80=VPinballX85.exe
-'''
+```
 
 With this information VPinballX.starter can be used as a replacement for VPinballX.exe.
 

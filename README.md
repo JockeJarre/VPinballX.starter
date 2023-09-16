@@ -5,7 +5,8 @@ Welcome new VPinballX.starter user!
 
 Using a small ini file similar to this one:
 
-'''[VPinballX.starter]
+``` ini
+[VPinballX.starter]
 ;DefaultVersion is used when VPinballX.starter is started without any table vpx file parameter.
 DefaultVersion=10.80
 [VPinballX]

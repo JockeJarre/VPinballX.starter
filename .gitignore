@@ -13,6 +13,8 @@
 x64/
 [Bb]in/
 [Oo]bj/
+*.bin
+*.exe
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
@@ -51,6 +53,7 @@ ipch/
 *.opensdf
 *.sdf
 *.cachefile
+*.vsidx
 
 # Visual Studio profiler
 *.psess
@@ -96,6 +99,9 @@ ClientBin/
 *~
 *.dbmdl
 *.[Pp]ublish.xml
+*.v?
+*.bak
+*.zip
 
 *.publishsettings
 

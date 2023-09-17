@@ -27,36 +27,34 @@ try
         string strDefaultIniConfig =
 @";A Configuration file for VPinballX.starter
 [VPinballX.starter]
-;DefaultVersion is used when VPinballX.starter is started without any table vpx file parameter.
+;DefaultVersion when started without any table param.
 DefaultVersion=10.80
 [VPinballX]
-;This Default value is used when the version set in the table vpx file isn't configured below.
-Default=VPinballX72.exe
-;The different versions stored in vpx files and converted to the right VPinballX.exe
-10.60=VPinballX62.exe
-10.70=VPinballX71.exe
-10.72=VPinballX72.exe
+;Default value used when not found in the table below.
+Default=VPinballX74.exe
+;File versions converted to the right VPinballXxx.exe
+10.60=VPinballX74.exe
+10.70=VPinballX74.exe
+10.72=VPinballX74.exe
 10.80=VPinballX85.exe";
 
         string strWelcomeString =
 $@"Welcome new VPinballX.starter user!
 
-We could not find a {strIniConfigFilename} next to the {strExeFileName} file.
-This file should look like this:
+We could not find a {strIniConfigFilename} next to the {strExeFileName} file. This file should look like this:
 
+X-----X-----X-----X----X-----X-----X-----X-----X
 {strDefaultIniConfig}
+X-----X-----X-----X----X-----X-----X-----X-----X
 
-With this information VPinballX.starter can be used as a replacement for VPinballX.exe.
-It works like this. VPinballX.starter is started with exactly the same parameters as VPinballX.exe.
-First it loads the table file and finds out what version it was saved with. Then it takes that information
-and looks in the [VPinballX] table above to find out which version of VPinballX.xxx.exe you want to start.
-It will then run the VPinballX.xxx.exe that you have configured using exactly the same parameters.
+With this information VPinballX.starter can be used as a replacement for VPinballX.exe. It works like this:
 
-If it cannot find a version in the table, or if you simply double-click the VPinballX.starter without any table,
-the default entry under [VPinballx.starter] will be used.
+VPinballX.starter is started with exactly the same parameters as VPinballX.exe. First it loads the table file and finds out what version it was saved with. Then it takes that information
+and looks in the [VPinballX] table above to find out which version of VPinballX.xxx.exe you want to start with. It will then run the VPinballX.xxx.exe that you have configured using exactly the same parameters.
 
-This way the correct table version or the version you have chosen will be used.
-Each time you start VPinballX, a log entry will be added to VPinballX.starter.log, telling which version was used.
+If it cannot find a version in the table the default entry under [VPinballx] will be used. If you simply double-click the VPinballX.starter without any table, the Default under [VPinballx.starter] is used.
+
+This way the correct table version or the version you have chosen will always be used. Each time you start VPinballX, a log entry will be added to VPinballX.starter.log, telling which version was used.
 
 Do you want to create this file now?";
 
@@ -67,7 +65,7 @@ Do you want to create this file now?";
             {
                 sw.Write(strDefaultIniConfig);
             }
-            MessageBox.Show($"The config file {strDefaultIniConfig} is created.\nPlease modify it too your needs.\n\nExiting.", $"{strExeFileName}: Welcome", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+            MessageBox.Show($"The config file {strSettingsIniFilePath} is created. Please modify it too your needs.\n\nExiting.", $"{strExeFileName}: Welcome", MessageBoxButtons.OK, MessageBoxIcon.Information);
             Environment.Exit(0);
         }
         if (!FileOrDirectoryExists(strSettingsIniFilePath) ){
@@ -119,7 +117,7 @@ Do you want to create this file now?";
     {
         vpxcommand = versionTable["VPinballX"]["Default"];
         if (object.Equals(vpxcommand, null))
-            throw new ArgumentException($"No\n\n[VPinballX]\n{strFileVersion}=VPinballX.xx.exe\nor\n\n\n[VPinballX]\nDefault=VPinballX.xx.exe\n\nfound in the ini! ({strSettingsIniFilePath})");
+            throw new ArgumentException($"No\n\n[VPinballX]\n{strFileVersion}=VPinballXxx.exe\nor\n\n\n[VPinballX]\nDefault=VPinballXxx.exe\n\nfound in the ini! ({strSettingsIniFilePath})");
     }
     if (!Path.IsPathFullyQualified(vpxcommand))
     {
@@ -127,9 +125,9 @@ Do you want to create this file now?";
     }
 
     if (!object.Equals(tableFilename, null))
-        logger.Info($"Found table \"{tableFilename}\" using version {strFileVersion} mapped to \"{vpxcommand}\"");
+        logger.Info($"Found table version {strFileVersion} of \"{tableFilename}\" mapped to \"{vpxcommand}\"");
     else
-        logger.Info($"No table found. Using default version {strFileVersion} mapped to \"{vpxcommand}\"");
+        logger.Info($"Using default version {strFileVersion} mapped to \"{vpxcommand}\"");
 
     StartAnotherProgram(vpxcommand, args);
 

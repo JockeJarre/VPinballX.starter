@@ -7,8 +7,11 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>VPinballX.starter.ico</ApplicationIcon>
-    <Title>$(AssemblyName)</Title>
+    <Title>VPinballX.starter</Title>
+    <Product>VPinballX.starter</Product>
     <PackageIcon>VPinballX.starter.png</PackageIcon>
+    <AssemblyVersion>0.9.1</AssemblyVersion>
+    <FileVersion>0.9.1-SNAPSHOT</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,10 +37,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
 
   <ItemGroup>

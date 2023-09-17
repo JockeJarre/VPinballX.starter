@@ -37,6 +37,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="VPinballX.starter.ico">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>

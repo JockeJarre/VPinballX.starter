@@ -1,0 +1,47 @@
+name: VPinballX.starter
+on:
+  push:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-server:
+    name: Build VPinballX.starter-${{ matrix.config }}-win-${{ matrix.platform }}
+    runs-on: windows-2019
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: x64
+            config: Release
+    steps:
+      - id: version
+        name: Update AssemblyInformationalVersion
+        run: |
+          SHA7="${GITHUB_SHA::7}"
+          TAG="${VERSION}-${SHA7}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          ASSEMBLY_INFO="VPinballX.starter\Properties/AssemblyInfo.cs"
+          VERSION=$(grep -Eo "AssemblyVersion\(.*\)" "${ASSEMBLY_INFO}" | grep -Eo "[0-9\.]+" | tail -1)
+          TAG="${VERSION}-${SHA7}"
+          perl -i -pe"s/AssemblyInformationalVersion\(\".*\"\)/AssemblyInformationalVersion\(\"${TAG}\"\)/g" "${ASSEMBLY_INFO}"
+      - uses: microsoft/setup-msbuild@v1.1
+      - name: Build VPinballX.starter
+        run: |
+          msbuild VPinballX.starter.sln /t:Rebuild /p:Configuration=${{ matrix.config }}
+        shell: cmd
+      - name: Bundle 
+        run: |
+          mkdir tmp  
+          cp VPinballX.starter/bin/${{ matrix.config }}/VPinballX.starter.exe tmp
+          if [[ "${{ matrix.config }}" == "Debug" ]]; then
+             cp VPinballX.starter/VPinballX.starter/bin/${{ matrix.config }}/VPinballX.starter.pdb tmp
+          fi
+          cp README.md tmp
+      - uses: actions/upload-artifact@v3
+        with:
+         name: VPinballX.starter-${{ steps.version.outputs.tag }}-${{ matrix.config }}-win-${{ matrix.platform }}
+         path: tmp
+

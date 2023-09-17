@@ -25,7 +25,7 @@ jobs:
           SHA7="${GITHUB_SHA::7}"
           TAG="${VERSION}-${SHA7}"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
-          ASSEMBLY_INFO="VPinballX.starter/Properties/AssemblyInfo.cs"
+          ASSEMBLY_INFO="Properties/AssemblyInfo.cs"
           VERSION=$(grep -Eo "AssemblyVersion\(.*\)" "${ASSEMBLY_INFO}" | grep -Eo "[0-9\.]+" | tail -1)
           TAG="${VERSION}-${SHA7}"
           perl -i -pe"s/AssemblyInformationalVersion\(\".*\"\)/AssemblyInformationalVersion\(\"${TAG}\"\)/g" "${ASSEMBLY_INFO}"

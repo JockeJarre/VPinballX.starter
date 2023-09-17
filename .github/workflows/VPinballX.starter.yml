@@ -20,6 +20,8 @@ jobs:
       - id: version
         name: Update AssemblyInformationalVersion
         run: |
+          pwd
+          ls
           SHA7="${GITHUB_SHA::7}"
           TAG="${VERSION}-${SHA7}"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT

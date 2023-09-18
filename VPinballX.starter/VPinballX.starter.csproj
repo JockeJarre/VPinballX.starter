@@ -1,4 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <_SuppressWinFormsTrimError>true</_SuppressWinFormsTrimError>
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -49,5 +50,4 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-<_SuppressWinFormsTrimError>true</_SuppressWinFormsTrimError>
 </Project>

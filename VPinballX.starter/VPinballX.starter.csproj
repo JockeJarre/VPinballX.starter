@@ -49,5 +49,5 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-
+<_SuppressWinFormsTrimError>true</_SuppressWinFormsTrimError>
 </Project>

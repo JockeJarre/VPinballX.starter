@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <_SuppressWinFormsTrimError>true</_SuppressWinFormsTrimError>
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -12,6 +11,7 @@
     <Product>VPinballX.starter</Product>
     <PackageIcon>VPinballX.starter.png</PackageIcon>
     <AssemblyVersion>0.9.1</AssemblyVersion>
+    <_SuppressWinFormsTrimError>true</_SuppressWinFormsTrimError>
     <FileVersion>0.9.1-SNAPSHOT</FileVersion>
   </PropertyGroup>
 

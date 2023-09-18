@@ -33,7 +33,7 @@ jobs:
       - name: Build VPinballX.starter
         run: |
           cd VPinballX.starter
-          dotnet publish -r ${{ matrix.rid }} -c ${{ matrix.config }} /p:PublishTrimmed=true -p:PublishSingleFile=true
+          dotnet publish -r ${{ matrix.rid }} -c ${{ matrix.config }} -p:PublishTrimmed=true -p:PublishSingleFile=true
       - name: Bundle 
         run: |
           mkdir tmp  

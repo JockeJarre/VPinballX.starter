@@ -4,14 +4,12 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
-    <UseWindowsForms>true</UseWindowsForms>
+    <UseWindowsForms>false</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>VPinballX.starter.ico</ApplicationIcon>
     <Title>VPinballX.starter</Title>
     <Product>VPinballX.starter</Product>
-    <PackageIcon>VPinballX.starter.png</PackageIcon>
     <AssemblyVersion>0.9.1</AssemblyVersion>
-    <_SuppressWinFormsTrimError>true</_SuppressWinFormsTrimError>
     <FileVersion>0.9.1-SNAPSHOT</FileVersion>
   </PropertyGroup>
 
@@ -42,10 +40,6 @@
 
   <ItemGroup>
     <None Update="VPinballX.starter.ico">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Update="VPinballX.starter.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>

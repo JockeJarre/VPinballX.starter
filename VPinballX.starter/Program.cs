@@ -2,18 +2,22 @@ using IniParser;
 using IniParser.Model;
 using System.Diagnostics;
 using OpenMcdf;
-using NLog;
-
+//using NLog;
+using System.Runtime.InteropServices;
 string strExeFilePath = Application.ExecutablePath;
 string strExeFileName = Path.GetFileName(strExeFilePath);
 string strWorkPath = Path.GetDirectoryName(strExeFilePath);
 string strIniConfigFilename = "VPinballX.starter.ini";
 
-var config = new NLog.Config.LoggingConfiguration();
-var logfile = new NLog.Targets.FileTarget("logfile") { FileName = "VPinballX.starter.log" };
-config.AddRule(NLog.LogLevel.Debug, NLog.LogLevel.Fatal, logfile);
-LogManager.Configuration = config;
-var logger = LogManager.GetCurrentClassLogger();
+
+
+
+
+//var config = new NLog.Config.LoggingConfiguration();
+//var logfile = new NLog.Targets.FileTarget("logfile") { FileName = "VPinballX.starter.log" };
+//config.AddRule(NLog.LogLevel.Debug, NLog.LogLevel.Fatal, logfile);
+//LogManager.Configuration = config;
+//var logger = LogManager.GetCurrentClassLogger();
 
 try
 {
@@ -43,7 +47,7 @@ $@"Welcome new VPinballX.starter user!
 
 We could not find a {strIniConfigFilename} next to the {strExeFileName} file. This file should look like this:
 
-X-----X-----X-----X----X-----X-----X-----X-----X
+X-----X-----X-----X----X-----X-----X-----X-----\\u9988
 {strDefaultIniConfig}
 X-----X-----X-----X----X-----X-----X-----X-----X
 
@@ -57,15 +61,16 @@ If it cannot find a version in the table the default entry under [VPinballx] wil
 This way the correct table version or the version you have chosen will always be used. Each time you start VPinballX, a log entry will be added to VPinballX.starter.log, telling which version was used.
 
 Do you want to create this file now?";
-
-        DialogResult dialogResult = MessageBox.Show(strWelcomeString, $"{strExeFileName}: Welcome", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
-        if (dialogResult == DialogResult.Yes)
+        int dialogResult = Native.MessageBoxW(IntPtr.Zero, strWelcomeString, $"{strExeFileName}: Welcome", Native.MB_YESNO);
+        //DialogResult dialogResult = MessageBox.Show(strWelcomeString, $"{strExeFileName}: Welcome", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+        if (dialogResult == Native.IDYES)
         {
             using (StreamWriter sw = File.CreateText(strSettingsIniFilePath))
             {
                 sw.Write(strDefaultIniConfig);
             }
-            MessageBox.Show($"The config file {strSettingsIniFilePath} is created. Please modify it too your needs.\n\nExiting.", $"{strExeFileName}: Welcome", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Native.MessageBoxW(IntPtr.Zero, $"The config file {strSettingsIniFilePath} is created. Please modify it too your needs.\n\nExiting.", $"{strExeFileName}: Welcome", Native.MB_OK);
+            //MessageBox.Show(, MessageBoxButtons.OK, MessageBoxIcon.Information);
             Environment.Exit(0);
         }
         if (!FileOrDirectoryExists(strSettingsIniFilePath) ){
@@ -123,27 +128,31 @@ Do you want to create this file now?";
     {
         vpxcommand = System.IO.Path.Combine(strWorkPath, vpxcommand);
     }
-
+    /*
     if (!object.Equals(tableFilename, null))
         logger.Info($"Found table version {strFileVersion} of \"{tableFilename}\" mapped to \"{vpxcommand}\"");
     else
         logger.Info($"Using default version {strFileVersion} mapped to \"{vpxcommand}\"");
-
+    */
     StartAnotherProgram(vpxcommand, args);
 
 }
 catch (ArgumentException e)
 {
-    MessageBox.Show(e.Message, $"{strExeFileName}: Configuration error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+    Native.MessageBoxW(IntPtr.Zero, e.Message, $"{strExeFileName}: Configuration error", Native.MB_OK | Native.MB_ICONEXCLAMATION);
+
+    //MessageBox.Show(e.Message, $"{strExeFileName}: Configuration error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 }
 catch (FileNotFoundException e)
 {
-    MessageBox.Show(e.Message, $"{strExeFileName}: File not found", MessageBoxButtons.OK, MessageBoxIcon.Error);
+    Native.MessageBoxW(IntPtr.Zero, e.Message, $"{strExeFileName}: File not found", Native.MB_OK | Native.MB_ICONHAND);
+    //MessageBox.Show(e.Message, $"{strExeFileName}: File not found", MessageBoxButtons.OK, MessageBoxIcon.Error);
 }
 catch (Exception e)
 {
-    logger.Error(e, "Unknown error");
-    MessageBox.Show(e.Message, $"{strExeFileName}: Unknown error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+    //logger.Error(e, "Unknown error");
+    Native.MessageBoxW(IntPtr.Zero, e.Message, $"{strExeFileName}: Unknown error", Native.MB_OK | Native.MB_ICONHAND);
+    //MessageBox.Show(e.Message, $"{strExeFileName}: Unknown error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 }
 
 bool FileOrDirectoryExists(string name)
@@ -172,4 +181,57 @@ void StartAnotherProgram(string programPath, string[] programArgs)
 
     process.StartInfo = startInfo;
     process.Start();
+}
+public static class Native
+{
+    public const int MB_OK = (int)0x00000000L;
+    public const int MB_OKCANCEL = (int)0x00000001L;
+    public const int MB_ABORTRETRYIGNORE = (int)0x00000002L;
+    public const int MB_YESNOCANCEL = (int)0x00000003L;
+    public const int MB_YESNO = (int)0x00000004L;
+    public const int MB_RETRYCANCEL = (int)0x00000005L;
+    public const int MB_CANCELTRYCONTINUE = (int)0x00000006L;
+
+    public const int MB_ICONHAND = (int)0x00000010L;
+    public const int MB_ICONQUESTION = (int)0x00000020L;
+    public const int MB_ICONEXCLAMATION = (int)0x00000030L;
+    public const int MB_ICONASTERISK = (int)0x00000040L;
+
+    public const int MB_USERICON = (int)0x00000080L;
+
+    public const int MB_DEFBUTTON1 = (int)0x00000000L;
+    public const int MB_DEFBUTTON2 = (int)0x00000100L;
+    public const int MB_DEFBUTTON3 = (int)0x00000200L;
+    public const int MB_DEFBUTTON4 = (int)0x00000300L;
+
+    public const int MB_APPLMODAL = (int)0x00000000L;
+    public const int MB_SYSTEMMODAL = (int)0x00001000L;
+    public const int MB_TASKMODAL = (int)0x00002000L;
+
+    public const int MB_HELP = (int)0x00004000L; // Help Button
+
+    public const int MB_NOFOCUS = (int)0x00008000L;
+    public const int MB_SETFOREGROUND = (int)0x00010000L;
+    public const int MB_DEFAULT_DESKTOP_ONLY = (int)0x00020000L;
+
+    public const int MB_TOPMOST = (int)0x00040000L;
+    public const int MB_RIGHT = (int)0x00080000L;
+    public const int MB_RTLREADING = (int)0x00100000L;
+
+    public const int IDABORT = (int)3;
+    public const int IDCANCEL = (int)2;
+    public const int IDCONTINUE = (int)11;
+    public const int IDIGNORE = (int)5;
+    public const int IDNO = (int)7;
+    public const int IDOK = (int)1;
+    public const int IDRETRY = (int)4;
+    public const int IDTRYAGAIN = (int)10;
+    public const int IDYES = (int)6;
+
+    [DllImport("User32.dll", CharSet = CharSet.Unicode)]
+    public static extern int MessageBoxW(
+    IntPtr hWnd,
+    [param: MarshalAs(UnmanagedType.LPWStr)] string lpText,
+    [param: MarshalAs(UnmanagedType.LPWStr)] string lpCaption,
+    UInt32 uType);
 }

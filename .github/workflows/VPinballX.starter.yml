@@ -37,7 +37,7 @@ jobs:
       - name: Bundle 
         run: |
           mkdir tmp  
-          cp VPinballX.starter/bin/Release/net6.0-windows/win-x64/publish/* tmp
+          cp VPinballX.starter/bin/Release/net6.0-windows/win-x64/publish/VPinballX.starter.exe tmp
           cp README.md tmp
       - uses: actions/upload-artifact@v3
         with:

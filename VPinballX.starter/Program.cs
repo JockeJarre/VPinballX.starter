@@ -4,27 +4,17 @@ using System.Diagnostics;
 using OpenMcdf;
 //using NLog;
 using System.Runtime.InteropServices;
-string strExeFilePath = Application.ExecutablePath;
-string strExeFileName = Path.GetFileName(strExeFilePath);
-string strWorkPath = Path.GetDirectoryName(strExeFilePath);
+
+string strExeFilePath = AppDomain.CurrentDomain.BaseDirectory;
+string strExeFileName = System.AppDomain.CurrentDomain.FriendlyName;
 string strIniConfigFilename = "VPinballX.starter.ini";
-
-
-
-
-
-//var config = new NLog.Config.LoggingConfiguration();
-//var logfile = new NLog.Targets.FileTarget("logfile") { FileName = "VPinballX.starter.log" };
-//config.AddRule(NLog.LogLevel.Debug, NLog.LogLevel.Fatal, logfile);
-//LogManager.Configuration = config;
-//var logger = LogManager.GetCurrentClassLogger();
 
 try
 {
 
     var parser = new FileIniDataParser();
 
-    string strSettingsIniFilePath = System.IO.Path.Combine(strWorkPath, $"{strIniConfigFilename}");
+    string strSettingsIniFilePath = System.IO.Path.Combine(strExeFilePath, $"{strIniConfigFilename}");
 
     if (!FileOrDirectoryExists(strSettingsIniFilePath))
     {
@@ -126,7 +116,7 @@ Do you want to create this file now?";
     }
     if (!Path.IsPathFullyQualified(vpxcommand))
     {
-        vpxcommand = System.IO.Path.Combine(strWorkPath, vpxcommand);
+        vpxcommand = System.IO.Path.Combine(strExeFilePath, vpxcommand);
     }
     /*
     if (!object.Equals(tableFilename, null))

@@ -2,19 +2,18 @@ using IniParser;
 using IniParser.Model;
 using System.Diagnostics;
 using OpenMcdf;
-//using NLog;
 using System.Runtime.InteropServices;
 
 string strExeFilePath = AppDomain.CurrentDomain.BaseDirectory;
-string strExeFileName = System.AppDomain.CurrentDomain.FriendlyName;
+string strExeFileName = AppDomain.CurrentDomain.FriendlyName;
 string strIniConfigFilename = "VPinballX.starter.ini";
+string strLogFilename = "VPinballX.starter.log";
 
 try
 {
-
     var parser = new FileIniDataParser();
 
-    string strSettingsIniFilePath = System.IO.Path.Combine(strExeFilePath, $"{strIniConfigFilename}");
+    string strSettingsIniFilePath = Path.Combine(strExeFilePath, $"{strIniConfigFilename}");
 
     if (!FileOrDirectoryExists(strSettingsIniFilePath))
     {
@@ -23,6 +22,7 @@ try
 [VPinballX.starter]
 ;DefaultVersion when started without any table param.
 DefaultVersion=10.80
+LogVersions=1
 [VPinballX]
 ;Default value used when not found in the table below.
 Default=VPinballX74.exe
@@ -35,43 +35,46 @@ Default=VPinballX74.exe
         string strWelcomeString =
 $@"Welcome new VPinballX.starter user!
 
-We could not find a {strIniConfigFilename} next to the {strExeFileName} file. This file should look like this:
+We could not find a ""{strIniConfigFilename}"" next to ""{strExeFileName}"". 
 
-X-----X-----X-----X----X-----X-----X-----X-----\\u9988
-{strDefaultIniConfig}
+The file should look like this:
+
 X-----X-----X-----X----X-----X-----X-----X-----X
 
-With this information VPinballX.starter can be used as a replacement for VPinballX.exe. It works like this:
+{strDefaultIniConfig}
 
-VPinballX.starter is started with exactly the same parameters as VPinballX.exe. First it loads the table file and finds out what version it was saved with. Then it takes that information
-and looks in the [VPinballX] table above to find out which version of VPinballX.xxx.exe you want to start with. It will then run the VPinballX.xxx.exe that you have configured using exactly the same parameters.
+X-----X-----X-----X----X-----X-----X-----X-----X
+
+VPinballX.starter can therefore be used as a VPinballX.exe replacement.
+
+It works like this:
+
+VPinballX.starter is started with exactly the same parameters as VPinballX.exe. First it loads the table file and finds out what version it was saved with. Then it takes that information and looks in the [VPinballX] table above to find out which version of VPinballX.xxx.exe you want to start with. It will then run the VPinballX.xxx.exe that you have configured using exactly the same parameters.
 
 If it cannot find a version in the table the default entry under [VPinballx] will be used. If you simply double-click the VPinballX.starter without any table, the Default under [VPinballx.starter] is used.
 
-This way the correct table version or the version you have chosen will always be used. Each time you start VPinballX, a log entry will be added to VPinballX.starter.log, telling which version was used.
+This way the correct table version or the version you have chosen will always be used. Each time you start VPinballX, a log entry will be added to VPinballX.starter.log, telling which version was used. This can be turned of in the ini file.
 
 Do you want to create this file now?";
         int dialogResult = Native.MessageBoxW(IntPtr.Zero, strWelcomeString, $"{strExeFileName}: Welcome", Native.MB_YESNO);
-        //DialogResult dialogResult = MessageBox.Show(strWelcomeString, $"{strExeFileName}: Welcome", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
         if (dialogResult == Native.IDYES)
         {
             using (StreamWriter sw = File.CreateText(strSettingsIniFilePath))
             {
                 sw.Write(strDefaultIniConfig);
             }
-            Native.MessageBoxW(IntPtr.Zero, $"The config file {strSettingsIniFilePath} is created. Please modify it too your needs.\n\nExiting.", $"{strExeFileName}: Welcome", Native.MB_OK);
-            //MessageBox.Show(, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Native.MessageBoxW(IntPtr.Zero, $"The config file \"{strSettingsIniFilePath}\" is created. \n\nPlease modify it too your needs. Exiting.", $"{strExeFileName}: Welcome", Native.MB_OK);
             Environment.Exit(0);
         }
         if (!FileOrDirectoryExists(strSettingsIniFilePath) ){
-            throw new FileNotFoundException($"Configuration \"{strSettingsIniFilePath}\"cannot be found!\n\nExiting");
+            throw new FileNotFoundException($"Configuration \"{strSettingsIniFilePath}\" cannot be found!\n\nExiting");
         }
     }
 
 
     IniData versionTable = parser.ReadFile(strSettingsIniFilePath);
 
-    string tableFilename = null;
+    string tableFilename = "";
 
     foreach (string arg in args)
     {
@@ -90,9 +93,9 @@ Do you want to create this file now?";
     var fileVersion = Int32.Parse(defaultfileVersion.Replace(".", String.Empty));
 
 
-    if (!object.Equals(tableFilename, null))
+    if (!tableFilename.Equals(""))
     {
-        // Read the version of VPinballX which saved this table
+        // Read the version of VPinballX.exe which saved this table
         var cf = new CompoundFile(tableFilename);
         try
         {
@@ -107,42 +110,39 @@ Do you want to create this file now?";
         }
     }
     string strFileVersion = $"{fileVersion / 100}.{fileVersion % 100}";
-    string vpxcommand = versionTable["VPinballX"][strFileVersion];
+    string vpxcommand = versionTable["VPinballX"][strFileVersion] ?? versionTable["VPinballX"]["Default"];
+
     if (object.Equals(vpxcommand, null))
-    {
-        vpxcommand = versionTable["VPinballX"]["Default"];
-        if (object.Equals(vpxcommand, null))
-            throw new ArgumentException($"No\n\n[VPinballX]\n{strFileVersion}=VPinballXxx.exe\nor\n\n\n[VPinballX]\nDefault=VPinballXxx.exe\n\nfound in the ini! ({strSettingsIniFilePath})");
-    }
+        throw new ArgumentException($"No\n\n[VPinballX]\n{strFileVersion}=VPinballXxx.exe\nor\n\n\n[VPinballX]\nDefault=VPinballXxx.exe\n\nfound in the ini! ({strSettingsIniFilePath})");
+
     if (!Path.IsPathFullyQualified(vpxcommand))
     {
-        vpxcommand = System.IO.Path.Combine(strExeFilePath, vpxcommand);
+        vpxcommand = Path.Combine(strExeFilePath, vpxcommand);
     }
-    /*
-    if (!object.Equals(tableFilename, null))
-        logger.Info($"Found table version {strFileVersion} of \"{tableFilename}\" mapped to \"{vpxcommand}\"");
-    else
-        logger.Info($"Using default version {strFileVersion} mapped to \"{vpxcommand}\"");
-    */
+
+    if ((versionTable["VPinballX.starter"]["LogVersions"] ?? "0" ).Equals("1"))
+    {
+        if (!object.Equals(tableFilename, ""))
+            using (StreamWriter sw = File.AppendText(Path.Combine(strExeFilePath, strLogFilename)))
+                sw.WriteLine(DateTime.Now.ToString("yyyy’-‘MM’-‘dd’ ’HH’:’mm’:’ss") + $"Found table version {strFileVersion} of \"{tableFilename}\" mapped to \"{vpxcommand}\"");
+        else
+            using (StreamWriter sw = File.AppendText(Path.Combine(strExeFilePath, strLogFilename)))
+                sw.WriteLine(DateTime.Now.ToString("yyyy’-‘MM’-‘dd’ ’HH’:’mm’:’ss") + $"Using default version {strFileVersion} mapped to \"{vpxcommand}\"");
+    }
     StartAnotherProgram(vpxcommand, args);
 
 }
 catch (ArgumentException e)
 {
     Native.MessageBoxW(IntPtr.Zero, e.Message, $"{strExeFileName}: Configuration error", Native.MB_OK | Native.MB_ICONEXCLAMATION);
-
-    //MessageBox.Show(e.Message, $"{strExeFileName}: Configuration error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 }
 catch (FileNotFoundException e)
 {
     Native.MessageBoxW(IntPtr.Zero, e.Message, $"{strExeFileName}: File not found", Native.MB_OK | Native.MB_ICONHAND);
-    //MessageBox.Show(e.Message, $"{strExeFileName}: File not found", MessageBoxButtons.OK, MessageBoxIcon.Error);
 }
 catch (Exception e)
 {
-    //logger.Error(e, "Unknown error");
     Native.MessageBoxW(IntPtr.Zero, e.Message, $"{strExeFileName}: Unknown error", Native.MB_OK | Native.MB_ICONHAND);
-    //MessageBox.Show(e.Message, $"{strExeFileName}: Unknown error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 }
 
 bool FileOrDirectoryExists(string name)
@@ -151,8 +151,6 @@ bool FileOrDirectoryExists(string name)
 }
 void StartAnotherProgram(string programPath, string[] programArgs)
 {
-    //string Arguments = string.Join(" ", programArgs);
-
     Process process = new Process();
 
     ProcessStartInfo startInfo = new ProcessStartInfo

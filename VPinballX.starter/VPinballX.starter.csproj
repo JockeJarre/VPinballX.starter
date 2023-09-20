@@ -20,7 +20,6 @@
 
   <ItemGroup>
     <PackageReference Include="ini-parser" Version="2.5.2" />
-    <PackageReference Include="NLog.Extensions.Logging" Version="5.3.4" />
     <PackageReference Include="OpenMcdf" Version="2.3.0" />
   </ItemGroup>
 

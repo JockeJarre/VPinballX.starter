@@ -2,6 +2,9 @@ name: VPinballX.starter
 on:
   push:
 
+env:
+    ACTIONS_RUNNER_DEBUG: true
+
 defaults:
   run:
     shell: bash
@@ -24,11 +27,17 @@ jobs:
       - id: version
         name: Update AssemblyInformationalVersion
         run: |
+          echo "A"
           SHA7="${GITHUB_SHA::7}"
+          echo "B"
           ASSEMBLY_INFO="VPinballX.starter/VPinballX.starter.csproj"
+          echo "C"
           VERSION=$(grep -Eo "<AssemblyVersion>" "${ASSEMBLY_INFO}" | grep -Eo "[0-9\.]+" | tail -1)
+          echo "D"
           TAG="${VERSION}-${SHA7}"
+          echo "E"
           perl -i -pe"s/AssemblyVersion>.*</AssemblyVersion>${TAG}</g" "${ASSEMBLY_INFO}"
+          echo "F"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
       - name: Build VPinballX.starter
         run: |

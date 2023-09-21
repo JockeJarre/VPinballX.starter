@@ -10,8 +10,9 @@
     <Title>VPinballX.starter</Title>
     <Product>VPinballX.starter</Product>
     <AssemblyVersion>0.9.1</AssemblyVersion>
+    <Version>0.9.1</Version>
     <_SuppressWinFormsTrimError>true</_SuppressWinFormsTrimError>
-    <FileVersion>0.9.1-SNAPSHOT</FileVersion>
+    <FileVersion>0.9.1</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

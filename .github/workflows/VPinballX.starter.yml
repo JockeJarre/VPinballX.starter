@@ -32,12 +32,11 @@ jobs:
           VERSION=$(grep -Eo "<AssemblyVersion>.*" "${ASSEMBLY_INFO}" | grep -Eo "[0-9\.]+" | tail -1)
           TAG="${VERSION}-${SHA7}"
           perl -i -pe"s/AssemblyVersion>.*</AssemblyVersion>${TAG}</g" "${ASSEMBLY_INFO}"
-          echo "F"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
       - name: Build VPinballX.starter
         run: |
           cd VPinballX.starter
-          dotnet publish -r ${{ matrix.rid }} -c ${{ matrix.config }} -p:PublishSingleFile=true -p:PublishTrimmed=true
+          dotnet publish -r ${{ matrix.rid }} -c ${{ matrix.config }} -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained
       - name: Bundle 
         run: |
           mkdir tmp  

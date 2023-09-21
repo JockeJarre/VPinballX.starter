@@ -12,7 +12,7 @@
     <AssemblyVersion>0.9.1</AssemblyVersion>
     <Version>0.9.1</Version>
     <FileVersion>0.9.1</FileVersion>
-    <Copyright>©YEAR Richard Ludwig</Copyright>
+    <Copyright>©COPYRIGHTYEAR Richard Ludwig</Copyright>
     <Description>VPinballX.exe version starter using an inifile</Description>
   </PropertyGroup>
 

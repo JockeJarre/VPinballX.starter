@@ -32,6 +32,8 @@ jobs:
           VERSION=$(grep -Eo "<Version>.*" "${ASSEMBLY_INFO}" | grep -Eo "[0-9\.]+" | tail -1)
           TAG="${VERSION}-${SHA7}"
           perl -i -pe"s/<Version>.*</<Version>${TAG}</g" "${ASSEMBLY_INFO}"
+          YEAR="$(date +'%Y')"
+          perl -i -pe"s/COPYRIGHTYEAR/${YEAR}/g" "${ASSEMBLY_INFO}"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
       - name: Build VPinballX.starter
         run: |

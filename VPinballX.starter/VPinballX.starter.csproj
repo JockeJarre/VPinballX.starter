@@ -7,12 +7,13 @@
     <UseWindowsForms>false</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>VPinballX.starter.ico</ApplicationIcon>
-    <Title>VPinballX.starter</Title>
+    <Title>VPinballX version starter using an inifile</Title>
     <Product>VPinballX.starter</Product>
     <AssemblyVersion>0.9.1</AssemblyVersion>
     <Version>0.9.1</Version>
-    <_SuppressWinFormsTrimError>true</_SuppressWinFormsTrimError>
     <FileVersion>0.9.1</FileVersion>
+    <Copyright>©YEAR Richard Ludwig</Copyright>
+    <Description>VPinballX.exe version starter using an inifile</Description>
   </PropertyGroup>
 
   <ItemGroup>

@@ -27,6 +27,9 @@ jobs:
       - id: version
         name: Update AssemblyInformationalVersion
         run: |
+          echo run_id ${{ github.run_id }}
+          echo run_number ${{ github.run_number }}
+          echo run_attempt ${{ github.run_attempt }}
           SHA7="${GITHUB_SHA::7}"
           ASSEMBLY_INFO="VPinballX.starter/VPinballX.starter.csproj"
           VERSION=$(grep -Eo "<Version>.*" "${ASSEMBLY_INFO}" | grep -Eo "[0-9\.]+" | tail -1)

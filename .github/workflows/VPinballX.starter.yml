@@ -38,6 +38,7 @@ jobs:
           YEAR="$(date +'%Y')"
           perl -i -pe"s/COPYRIGHTYEAR/${YEAR}/g" "${ASSEMBLY_INFO}"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "run_number=${{ github.run_number }}" >> $GITHUB_OUTPUT
       - name: Build VPinballX.starter
         run: |
           cd VPinballX.starter
@@ -46,9 +47,10 @@ jobs:
         run: |
           mkdir tmp  
           cp VPinballX.starter/bin/Release/net6.0-windows/win-x64/publish/VPinballX.starter.exe tmp
-          cp README.md tmp
+          cp README.md tmp/ReadMe.txt
+          cat doc/*.LICENSE.txt > tmp/licenses.txt
       - uses: actions/upload-artifact@v3
         with:
-          name: VPinballX.starter-${{ steps.version.outputs.tag }}-${{ matrix.config }}-${{ matrix.rid }}
+          name: VPinballX.starter-${{ steps.version.outputs.run_number }}-${{ steps.version.outputs.tag }}-${{ matrix.config }}-${{ matrix.rid }}
           path: tmp
 

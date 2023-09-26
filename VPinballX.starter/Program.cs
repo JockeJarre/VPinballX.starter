@@ -140,10 +140,10 @@ Do you want to create this file now?";
     {
         if (!object.Equals(tableFilename, ""))
             using (StreamWriter sw = File.AppendText(Path.Combine(strExeFilePath, strLogFilename)))
-                sw.WriteLine(DateTime.Now.ToString("yyyy’-‘MM’-‘dd’ ’HH’:’mm’:’ss") + $"Found table version {strFileVersion} of \"{tableFilename}\" mapped to \"{vpxcommand}\"");
+                sw.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + $" Found table version {strFileVersion} of \"{tableFilename}\" mapped to \"{vpxcommand}\"");
         else
             using (StreamWriter sw = File.AppendText(Path.Combine(strExeFilePath, strLogFilename)))
-                sw.WriteLine(DateTime.Now.ToString("yyyy’-‘MM’-‘dd’ ’HH’:’mm’:’ss") + $"Using default version {strFileVersion} mapped to \"{vpxcommand}\"");
+                sw.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + $" Using default version {strFileVersion} mapped to \"{vpxcommand}\"");
     }
     StartAnotherProgram(vpxcommand, args);
 

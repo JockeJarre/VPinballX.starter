@@ -32,13 +32,12 @@ jobs:
           echo run_attempt ${{ github.run_attempt }}
           SHA7="${GITHUB_SHA::7}"
           ASSEMBLY_INFO="VPinballX.starter/VPinballX.starter.csproj"
-          VERSION=$(grep -Eo "<Version>.*" "${ASSEMBLY_INFO}" | grep -Eo "[0-9\.]+" | tail -1)
+          VERSION=$(grep -Eo "<Version>.*" "${ASSEMBLY_INFO}" | grep -Eo "[0-9\.]+" | tail -1).${{ github.run_number }}
           TAG="${VERSION}-${SHA7}"
           perl -i -pe"s/<Version>.*</<Version>${TAG}</g" "${ASSEMBLY_INFO}"
           YEAR="$(date +'%Y')"
           perl -i -pe"s/COPYRIGHTYEAR/${YEAR}/g" "${ASSEMBLY_INFO}"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
-          echo "run_number=${{ github.run_number }}" >> $GITHUB_OUTPUT
       - name: Build VPinballX.starter
         run: |
           cd VPinballX.starter
@@ -51,6 +50,6 @@ jobs:
           cat doc/*.LICENSE.txt > tmp/licenses.txt
       - uses: actions/upload-artifact@v3
         with:
-          name: VPinballX.starter-${{ steps.version.outputs.run_number }}-${{ steps.version.outputs.tag }}-${{ matrix.config }}-${{ matrix.rid }}
+          name: VPinballX.starter-${{ steps.version.outputs.tag }}-${{ matrix.config }}-${{ matrix.rid }}
           path: tmp
 

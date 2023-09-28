@@ -31,7 +31,7 @@ jobs:
           fetch-depth: 0
       - id: version
         run: |
-          VERSION=$(grep -Eo "<Version>[0-9.]+" VPinballX.starter/VPinballX.starter.csproj | grep -Eo "[0-9.]+"
+          VERSION=$(grep -Eo "<Version>[0-9.]+" VPinballX.starter/VPinballX.starter.csproj | grep -Eo "[0-9.]+")
           echo $VERSION
           #VERSION_MAJOR=$(grep -Eo "VP_VERSION_MAJOR\s+[0-9]+" vpversion.h | grep -Eo "[0-9]+")
           #VERSION_MINOR=$(grep -Eo "VP_VERSION_MINOR\s+[0-9]+" vpversion.h | grep -Eo "[0-9]+")

@@ -44,7 +44,7 @@ jobs:
            RUN_ID=$(jq -r --arg SHA "${{ needs.version.outputs.sha }}" --arg NAME "VPinballX.starter" '.workflow_runs[] | select(.head_sha==$SHA and .name==$NAME) | .id' runs.json) 
            echo "Downloading VPinballX.starter artifact list ${RUN_ID}..."
            curl -s "${{ env.ACTIONS_API_URL }}/runs/${RUN_ID}/artifacts" --output artifacts.json
-           ARTIFACTS=($(jq -r '.artifacts[] | .archive_download_url' artifacts.json)) 
+           ARTIFACTS=($(jq -r '.artifacts[] | .url' artifacts.json)) 
            for url in ${ARTIFACTS[@]}
            do
               echo "Downloading artifact: ${url}..."

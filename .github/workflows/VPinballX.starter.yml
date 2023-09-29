@@ -40,7 +40,7 @@ jobs:
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
       - name: Install dependencies
         run: |
-          dotnet add package Salaros.ConfigParser --version 0.3.8
+          dotnet add VPinballX.starter package Salaros.ConfigParser --version 0.3.8
           dotnet add VPinballX.starter package OpenMcdf --version 2.3.0
       - name: Build VPinballX.starter
         run: |

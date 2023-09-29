@@ -1,58 +1,58 @@
 name: VPinballX.starter
 on:
-    push:
+  push:
 
 env:
-    ACTIONS_RUNNER_DEBUG: true
+  ACTIONS_RUNNER_DEBUG: true
 
 defaults:
-    run:
-        shell: bash
+  run:
+    shell: bash
 
 jobs:
-    build-server:
-        name: Build VPinballX.starter-${{ matrix.config }}-win-${{ matrix.platform }}
-        runs-on: windows-2019
-        strategy:
-            fail-fast: false
-            matrix:
-                include:
-                    - rid: win-x64
-                        config: Release
-        steps:
-            - uses: actions/checkout@v4
-            - uses: actions/setup-dotnet@v3
-                with:
-                    dotnet-version: '6.x'
-            - id: version
-                name: Update AssemblyInformationalVersion
-                run: |
-                    echo run_id ${{ github.run_id }}
-                    echo run_number ${{ github.run_number }}
-                    echo run_attempt ${{ github.run_attempt }}
-                    SHA7="${GITHUB_SHA::7}"
-                    ASSEMBLY_INFO="VPinballX.starter/VPinballX.starter.csproj"
-                    VERSION=$(grep -Eo "<Version>.*" "${ASSEMBLY_INFO}" | grep -Eo "[0-9\.]+" | tail -1).${{ github.run_number }}
-                    TAG="${VERSION}-${SHA7}"
-                    perl -i -pe"s/<Version>.*</<Version>${TAG}</g" "${ASSEMBLY_INFO}"
-                    YEAR="$(date +'%Y')"
-                    perl -i -pe"s/COPYRIGHTYEAR/${YEAR}/g" "${ASSEMBLY_INFO}"
-                    echo "tag=${TAG}" >> $GITHUB_OUTPUT
-            - name: Install dependencies
-                    run: dotnet add package ini-parser --version 2.5.2
-                    run: dotnet add package OpenMcdf --version 2.3.0
-            - name: Build VPinballX.starter
-                run: |
-                    cd VPinballX.starter
-                    dotnet publish -r ${{ matrix.rid }} -c ${{ matrix.config }} -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained
-            - name: Bundle 
-                run: |
-                    mkdir tmp    
-                    cp VPinballX.starter/bin/Release/net6.0-windows/win-x64/publish/VPinballX.starter.exe tmp
-                    cp README.md tmp/VPinballX.starter.ReadMe.txt
-                    cat doc/*.LICENSE.txt > tmp/VPinballX.starter.licenses.txt
-            - uses: actions/upload-artifact@v3
-                with:
-                    name: VPinballX.starter-${{ steps.version.outputs.tag }}-${{ matrix.config }}-${{ matrix.rid }}
-                    path: tmp
+  build-server:
+    name: Build VPinballX.starter-${{ matrix.config }}-win-${{ matrix.platform }}
+    runs-on: windows-2019
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            config: Release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.x'
+      - id: version
+        name: Update AssemblyInformationalVersion
+        run: |
+          echo run_id ${{ github.run_id }}
+          echo run_number ${{ github.run_number }}
+          echo run_attempt ${{ github.run_attempt }}
+          SHA7="${GITHUB_SHA::7}"
+          ASSEMBLY_INFO="VPinballX.starter/VPinballX.starter.csproj"
+          VERSION=$(grep -Eo "<Version>.*" "${ASSEMBLY_INFO}" | grep -Eo "[0-9\.]+" | tail -1).${{ github.run_number }}
+          TAG="${VERSION}-${SHA7}"
+          perl -i -pe"s/<Version>.*</<Version>${TAG}</g" "${ASSEMBLY_INFO}"
+          YEAR="$(date +'%Y')"
+          perl -i -pe"s/COPYRIGHTYEAR/${YEAR}/g" "${ASSEMBLY_INFO}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+      - name: Install dependencies
+          run: dotnet add package ini-parser --version 2.5.2
+          run: dotnet add package OpenMcdf --version 2.3.0
+      - name: Build VPinballX.starter
+        run: |
+          cd VPinballX.starter
+          dotnet publish -r ${{ matrix.rid }} -c ${{ matrix.config }} -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained
+      - name: Bundle 
+        run: |
+          mkdir tmp  
+          cp VPinballX.starter/bin/Release/net6.0-windows/win-x64/publish/VPinballX.starter.exe tmp
+          cp README.md tmp/VPinballX.starter.ReadMe.txt
+          cat doc/*.LICENSE.txt > tmp/VPinballX.starter.licenses.txt
+      - uses: actions/upload-artifact@v3
+        with:
+          name: VPinballX.starter-${{ steps.version.outputs.tag }}-${{ matrix.config }}-${{ matrix.rid }}
+          path: tmp
 

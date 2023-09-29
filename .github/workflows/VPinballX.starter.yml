@@ -39,8 +39,9 @@ jobs:
           perl -i -pe"s/COPYRIGHTYEAR/${YEAR}/g" "${ASSEMBLY_INFO}"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
       - name: Install dependencies
-        run: dotnet add package ini-parser --version 2.5.2
-        run: dotnet add package OpenMcdf --version 2.3.0
+        run: |
+          dotnet add package ini-parser --version 2.5.2
+          dotnet add package OpenMcdf --version 2.3.0
       - name: Build VPinballX.starter
         run: |
           cd VPinballX.starter

@@ -15,6 +15,7 @@
     <Copyright>©COPYRIGHTYEAR Richard Ludwig</Copyright>
     <Description>VPinballX.exe version starter using an inifile</Description>
     <IsTrimmable>true</IsTrimmable>
+    <PublishTrimmed>true</PublishTrimmed>
   </PropertyGroup>
 
   <ItemGroup>

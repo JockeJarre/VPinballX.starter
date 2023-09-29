@@ -14,11 +14,10 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details: <https://www.gnu.org/licenses/>.
 */
 
-using IniParser;
-using IniParser.Model;
 using System.Diagnostics;
 using OpenMcdf;
 using System.Runtime.InteropServices;
+using Salaros.Configuration;
 
 string strExeFilePath = AppDomain.CurrentDomain.BaseDirectory;
 string strExeFileName = AppDomain.CurrentDomain.FriendlyName;
@@ -27,8 +26,6 @@ string strLogFilename = "VPinballX.starter.log";
 
 try
 {
-    var parser = new FileIniDataParser();
-
     string strSettingsIniFilePath = Path.Combine(strExeFilePath, $"{strIniConfigFilename}");
 
     if (!FileOrDirectoryExists(strSettingsIniFilePath))
@@ -87,8 +84,7 @@ Do you want to create this file now?";
         }
     }
 
-
-    IniData versionTable = parser.ReadFile(strSettingsIniFilePath);
+    var configFileFromPath = new ConfigParser(strSettingsIniFilePath);
 
     string tableFilename = "";
 
@@ -100,7 +96,7 @@ Do you want to create this file now?";
             break;
         }
     }
-    string defaultfileVersion = versionTable["VPinballX.starter"]["DefaultVersion"];
+    string defaultfileVersion = configFileFromPath["VPinballX.starter"]["DefaultVersion"];
 
     if (object.Equals(defaultfileVersion, null))
     {
@@ -126,7 +122,7 @@ Do you want to create this file now?";
         }
     }
     string strFileVersion = $"{fileVersion / 100}.{fileVersion % 100}";
-    string vpxcommand = versionTable["VPinballX"][strFileVersion] ?? versionTable["VPinballX"]["Default"];
+    string vpxcommand = configFileFromPath["VPinballX"][strFileVersion] ?? configFileFromPath["VPinballX"]["Default"];
 
     if (object.Equals(vpxcommand, null))
         throw new ArgumentException($"No\n\n[VPinballX]\n{strFileVersion}=VPinballXxx.exe\nor\n\n\n[VPinballX]\nDefault=VPinballXxx.exe\n\nfound in the ini! ({strSettingsIniFilePath})");
@@ -136,7 +132,7 @@ Do you want to create this file now?";
         vpxcommand = Path.Combine(strExeFilePath, vpxcommand);
     }
 
-    if ((versionTable["VPinballX.starter"]["LogVersions"] ?? "0" ).Equals("1"))
+    if ((configFileFromPath["VPinballX.starter"]["LogVersions"] ?? "0" ).Equals("1"))
     {
         if (!object.Equals(tableFilename, ""))
             using (StreamWriter sw = File.AppendText(Path.Combine(strExeFilePath, strLogFilename)))

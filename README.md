@@ -38,7 +38,7 @@ In this way, the correct table version or the version you have selected will be 
 Each time you start VPinballX.starter, a log entry will be added to VPinballX.starter.log stating which version was used.
 This can be disabled by setting LogVersions=0.
 
-#How to set it up
+# How to set it up
 
 Copy VPinballX.starter.exe next to your VPinballX.exe files. Double click on VPinballX.starter.exe and follow the instructions.
 It will create a template VPinballX.starter.ini that you will need to edit to your liking. 
@@ -54,3 +54,6 @@ Default=VPinballX.74.exe
 10.72=VPinballX.74.exe
 10.80=VPinballX64.85.exe
 ```
+
+Once you are happy with VPinballX.starter.exe, you can rename it to VPinballX.exe;
+it will take care of starting the right version independent if you are using Explorer, PinballX, PinballY or Pinup Popper.

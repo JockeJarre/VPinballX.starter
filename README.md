@@ -39,7 +39,8 @@ Each time you start VPinballX.starter, a log entry will be added to VPinballX.st
 This can be disabled by setting LogVersions=0.
 # Download
 
-The latest version can always be found under [releases](https://github.com/JockeJarre/VPinballX.starter/releases) on the right of the github page.
+The latest version can always be found under [Releases](https://github.com/JockeJarre/VPinballX.starter/releases) on the right of the github page.
+Builds for smaller isses, can be found under [Actions](https://github.com/JockeJarre/VPinballX.starter/actions) but you need a github login to access them.
 
 # How to set it up
 

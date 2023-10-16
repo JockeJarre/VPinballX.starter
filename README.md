@@ -37,6 +37,9 @@ Or if it cannot find a version stored in the table, it will use the default in [
 In this way, the correct table version or the version you have selected will be used.
 Each time you start VPinballX.starter, a log entry will be added to VPinballX.starter.log stating which version was used.
 This can be disabled by setting LogVersions=0.
+# Download
+
+The latest version can always be found under [releases](https://github.com/JockeJarre/VPinballX.starter/releases) on the right of the github page.
 
 # How to set it up
 

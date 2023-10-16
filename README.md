@@ -40,7 +40,7 @@ This can be disabled by setting LogVersions=0.
 # Download
 
 The latest version can always be found under [Releases](https://github.com/JockeJarre/VPinballX.starter/releases) on the right of the github page.
-Builds for smaller isses, can be found under [Actions](https://github.com/JockeJarre/VPinballX.starter/actions) but you need a github login to access them.
+Builds for smaller [issues](https://github.com/JockeJarre/VPinballX.starter/issues), can be found under [Actions](https://github.com/JockeJarre/VPinballX.starter/actions) but you need a github login to access them.
 
 # How to set it up
 

@@ -4,19 +4,28 @@ Small tool to start the right VPinballX version depending on the table file
 Using a small ini file similar to this one:
 
 ``` ini
-;A Configuration file for VPinballX.starter
+; A Configuration file for VPinballX.starter
 [VPinballX.starter]
-;DefaultVersion when started without any table param.
+; DefaultVersion when started without any table param.
 DefaultVersion=10.80
 LogVersions=1
+[TableNameExceptions]
+; If left string is found in the Table filename
+; we will use the right string to add to the version number search
+Table Name=x32
+Another Table=GL
+x32=x32
+GL=GL
 [VPinballX]
-;Default value to be used if not found in the table below.
+; Default value to be used if not found in the table below.
 Default=VPinballX72.exe
-;File versions converted to the right VPinballXxx.exe
+; File versions converted to the right VPinballXxx.exe
 10.60=VPinballX62.exe
 10.70=VPinballX71.exe
 10.72=VPinballX72.exe
 10.80=VPinballX85.exe
+10.80x32=VPinballX85x32.exe
+10.80GL=VPinballX85_GL.exe
 ```
 
 With this information, VPinballX.starter can be used as a replacement for VPinballX.exe.
@@ -37,6 +46,14 @@ Or if it cannot find a version stored in the table, it will use the default in [
 In this way, the correct table version or the version you have selected will be used.
 Each time you start VPinballX.starter, a log entry will be added to VPinballX.starter.log stating which version was used.
 This can be disabled by setting LogVersions=0.
+# Table Name Exceptions
+Exceptions to the automated finding the right executable can be defined in the [TableNameExceptions] table.
+The Exceptions are either that a string is added to the table filename hinting that this table should use the x32 version instead,
+or can be parts of a table filename pointing to the same string.
+This string will be added when searched for the executable. 
+E.g starting a table needing 10.80 and having an exception "GL" will look for 10.80GL in the VPinballX table.
+This is made using pure string handling, there is NO logic behind the strings in the ini file.
+
 # Download
 
 The latest version can always be found under [Releases](https://github.com/JockeJarre/VPinballX.starter/releases) on the right of the github page.

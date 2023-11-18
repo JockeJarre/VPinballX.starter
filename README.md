@@ -65,14 +65,18 @@ Copy VPinballX.starter.exe next to your VPinballX.exe files. Double click on VPi
 It will create a template VPinballX.starter.ini that you will need to edit to your liking. 
 The values 10.72, 10.80 (10.74 has no specific version saved) and so on all come from the pinball tables saved in different versions of VPinballX.exe.
 
-Normally it should be enough to have two of them and the two defaults:
+Normally it should be enough to have two of them, an exception and the two defaults:
 
 ``` ini
 [VPinballX.starter]
-DefaultVersion=10.72
+DefaultVersion=10.74
+[TableNameExceptions]
+x32=x32
 [VPinballX]
-Default=VPinballX.74.exe
-10.72=VPinballX.74.exe
+Default=VPinballX64.74.exe
+10.74x32=VPinballX32.74.exe
+10.74=VPinballX64.74.exe
+10.80x32=VPinballX32.85.exe
 10.80=VPinballX64.85.exe
 ```
 

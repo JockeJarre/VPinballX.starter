@@ -55,7 +55,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           prerelease: true
-          name: "v${{ needs.version.outputs.tag }}"
+          name: "VPinballX.starter-${{ needs.version.outputs.tag }}"
           tag: "v${{ needs.version.outputs.tag }}" 
           commit: ${{ needs.version.outputs.sha }}
           token:  ${{ secrets.GITHUB_TOKEN }}

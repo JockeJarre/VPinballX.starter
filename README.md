@@ -4,22 +4,22 @@ Small tool to start the right VPinballX version depending on the table file
 Using a small ini file similar to this one:
 
 ``` ini
-; A Configuration file for VPinballX.starter
+;A Configuration file for VPinballX.starter
 [VPinballX.starter]
-; DefaultVersion when started without any table param.
+;DefaultVersion when started without any table param.
 DefaultVersion=10.80
 LogVersions=1
 [TableNameExceptions]
-; If left string is found in the Table filename
-; we will use the right string to add to the version number search
+;If left string is found in the Table filename
+;we will use the right string to add to the version number search
 Table Name=x32
 Another Table=GL
 x32=x32
 GL=GL
 [VPinballX]
-; Default value to be used if not found in the table below.
+;Default value to be used if not found in the table below.
 Default=VPinballX72.exe
-; File versions converted to the right VPinballXxx.exe
+;File versions converted to the right VPinballXxx.exe
 10.60=VPinballX62.exe
 10.70=VPinballX71.exe
 10.72=VPinballX72.exe

@@ -14,53 +14,48 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details: <https://www.gnu.org/licenses/>.
 */
 
-using IniParser;
-using IniParser.Model;
 using System.Diagnostics;
 using System.IO.Pipes;
 using OpenMcdf;
 using System.Runtime.InteropServices;
+using Salaros.Configuration;
 
-using Microsoft.VisualBasic;
-using static System.Collections.Specialized.BitVector32;
-
-var strExeFilePath = AppDomain.CurrentDomain.BaseDirectory;
-var strExeFileName = AppDomain.CurrentDomain.FriendlyName;
-var strIniConfigFilename = "VPinballX.starter.ini";
+string strExeFilePath = AppDomain.CurrentDomain.BaseDirectory;
+string strExeFileName = AppDomain.CurrentDomain.FriendlyName;
+string strIniConfigFilename = "VPinballX.starter.ini";
 string strLogFilename = Path.Combine(strExeFilePath, "VPinballX.starter.log");
 
 try
 {
-    var parser = new FileIniDataParser();
-
-    var strSettingsIniFilePath = Path.Combine(strExeFilePath, strIniConfigFilename);
+    string strSettingsIniFilePath = Path.Combine(strExeFilePath, $"{strIniConfigFilename}");
 
     if (!FileOrDirectoryExists(strSettingsIniFilePath))
     {
-        const string strDefaultIniConfig = @"; A Configuration file for VPinballX.starter
+        const string strDefaultIniConfig = 
+@";A Configuration file for VPinballX.starter
 [VPinballX.starter]
-; DefaultVersion when started without any table param.
+;DefaultVersion when started without any table param.
 DefaultVersion=10.80
 LogVersions=1
 [TableNameExceptions]
-; If left string is found in the Table filename
-; we will use the right string to add to the version number search
+;If left string is found in the Table filename
+;we will use the right string to add to the version number search
 Table Name=x32
 Another Table=GL
 x32=x32
 GL=GL
 [VPinballX]
-; Default value to be used if not found in the table below.
-Default=VPinballX72.exe
-; File versions converted to the right VPinballXxx.exe
-10.60=VPinballX62.exe
-10.70=VPinballX71.exe
-10.72=VPinballX72.exe
+;Default value used when not found in the table below.
+Default=VPinballX74.exe
+;File versions converted to the right VPinballXxx.exe
+10.60=VPinballX74.exe
+10.70=VPinballX74.exe
+10.72=VPinballX74.exe
 10.80=VPinballX85.exe
 10.80x32=VPinballX85x32.exe
 10.80GL=VPinballX85_GL.exe";
 
-        var strWelcomeString =
+        string strWelcomeString =
 $@"Welcome new VPinballX.starter user!
 
 We could not find a ""{strIniConfigFilename}"" next to ""{strExeFileName}"". 
@@ -84,10 +79,10 @@ If it cannot find a version in the table the default entry under [VPinballX] wil
 This way the correct table version or the version you have chosen will always be used. Each time you start VPinballX, a log entry will be added to VPinballX.starter.log, telling which version was used. This can be turned of in the ini file.
 
 Do you want to create this file now?";
-        var dialogResult = Native.MessageBoxW(IntPtr.Zero, strWelcomeString, $"{strExeFileName}: Welcome", Native.MB_YESNO);
+        int dialogResult = Native.MessageBoxW(IntPtr.Zero, strWelcomeString, $"{strExeFileName}: Welcome", Native.MB_YESNO);
         if (dialogResult == Native.IDYES)
         {
-            using (var sw = File.CreateText(strSettingsIniFilePath))
+            using (StreamWriter sw = File.CreateText(strSettingsIniFilePath))
             {
                 sw.Write(strDefaultIniConfig);
             }
@@ -99,12 +94,11 @@ Do you want to create this file now?";
         }
     }
 
+    var configFileFromPath = new ConfigParser(strSettingsIniFilePath);
 
-    var versionTable = parser.ReadFile(strSettingsIniFilePath);
+    string tableFilename = "";
 
-    var tableFilename = "";
-
-    foreach (var arg in args)
+    foreach (string arg in args)
     {
         if (arg.EndsWith(".vpx", StringComparison.OrdinalIgnoreCase))
         {
@@ -112,7 +106,7 @@ Do you want to create this file now?";
             break;
         }
     }
-    var defaultFileVersion = versionTable["VPinballX.starter"]["DefaultVersion"];
+    string defaultFileVersion = configFileFromPath["VPinballX.starter"]["DefaultVersion"];
 
     if (object.Equals(defaultFileVersion, null))
     {
@@ -137,24 +131,28 @@ Do you want to create this file now?";
             cf.Close();
         }
     }
-    var strFileVersion = $"{fileVersion / 100}.{fileVersion % 100}";
+    string strFileVersion = $"{fileVersion / 100}.{fileVersion % 100}";
 
     // Check the TableNameExceptions either for a Table Name within the list or a specific alien VPX version used (e.g x64, x32 or GL)
-    if (versionTable["TableNameExceptions"] != null)
+    if (configFileFromPath["TableNameExceptions"] != null)
     {
-        foreach (KeyData key in versionTable["TableNameExceptions"])
+        LogToFile($"Found table TableNameExceptions" + configFileFromPath["TableNameExceptions"]);
+        foreach (var key in configFileFromPath["TableNameExceptions"].Keys)
         {
-            if (tableFilename.Contains(key.KeyName))
-                if (versionTable["VPinballX"].ContainsKey($"{strFileVersion}{key.Value}"))
+            LogToFile($"Found table TableNameExceptions {key.Name}");
+            if (tableFilename.Contains(key.Name))
+            {
+                LogToFile($"Found {key.Name} in {tableFilename}");
+                if (configFileFromPath["VPinballX"][$"{strFileVersion}{key.ValueRaw}"] != null)
                 {
-                    strFileVersion = $"{strFileVersion}{key.Value}";
+                    strFileVersion = $"{strFileVersion}{key.ValueRaw}";
                     break;
                 }
-
+            }
         }
     }
 
-    var vpxCommand = versionTable["VPinballX"][strFileVersion] ?? versionTable["VPinballX"]["Default"];
+    string vpxCommand = configFileFromPath["VPinballX"][strFileVersion] ?? configFileFromPath["VPinballX"]["Default"];
 
     if (object.Equals(vpxCommand, null))
         throw new ArgumentException($"No\n\n[VPinballX]\n{strFileVersion}=VPinballXxx.exe\nor\n\n\n[VPinballX]\nDefault=VPinballXxx.exe\n\nfound in the ini! ({strSettingsIniFilePath})");
@@ -162,7 +160,7 @@ Do you want to create this file now?";
     if (!Path.IsPathFullyQualified(vpxCommand))
         vpxCommand = Path.Combine(strExeFilePath, vpxCommand);
 
-    if ((versionTable["VPinballX.starter"]["LogVersions"] ?? "0" ).Equals("1"))
+    if ((configFileFromPath["VPinballX.starter"]["LogVersions"] ?? "0" ).Equals("1"))
     {
         if (!object.Equals(tableFilename, ""))
             LogToFile($"Found table version {strFileVersion} of \"{tableFilename}\" mapped to \"{vpxCommand}\"");
@@ -197,9 +195,9 @@ bool FileOrDirectoryExists(string name)
 }
 void StartAnotherProgram(string programPath, string[] programArgs)
 {
-    var process = new Process();
+    Process process = new Process();
 
-    var startInfo = new ProcessStartInfo
+    ProcessStartInfo startInfo = new ProcessStartInfo
     {
         FileName = programPath,
         RedirectStandardOutput = false,

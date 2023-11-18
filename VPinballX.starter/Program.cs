@@ -136,10 +136,8 @@ Do you want to create this file now?";
     // Check the TableNameExceptions either for a Table Name within the list or a specific alien VPX version used (e.g x64, x32 or GL)
     if (configFileFromPath["TableNameExceptions"] != null)
     {
-        LogToFile($"Found table TableNameExceptions" + configFileFromPath["TableNameExceptions"]);
         foreach (var key in configFileFromPath["TableNameExceptions"].Keys)
         {
-            LogToFile($"Found table TableNameExceptions {key.Name}");
             if (tableFilename.Contains(key.Name))
             {
                 LogToFile($"Found {key.Name} in {tableFilename}");

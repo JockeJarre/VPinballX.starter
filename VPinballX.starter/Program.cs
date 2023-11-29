@@ -193,25 +193,32 @@ bool FileOrDirectoryExists(string name)
 }
 void StartAnotherProgram(string programPath, string[] programArgs)
 {
-    Process process = new Process();
 
-    ProcessStartInfo startInfo = new ProcessStartInfo
+    using (Process process = new Process())
     {
-        FileName = programPath,
-        RedirectStandardOutput = false,
-        RedirectStandardError = false,
-        UseShellExecute = false,
-        CreateNoWindow = true
-    };
-    foreach (var arg in programArgs)
-    {
-        startInfo.ArgumentList.Add(arg);
+        ProcessStartInfo startInfo = new ProcessStartInfo
+        {
+            FileName = programPath,
+            RedirectStandardOutput = true,
+            RedirectStandardError = false,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        foreach (var arg in programArgs)
+        {
+            startInfo.ArgumentList.Add(arg);
+        }
+        process.StartInfo = startInfo;
+        process.Start();
+
+        Console.WriteLine(process.StandardOutput.ReadToEnd());
+        process.WaitForExit();
     }
 
-
-    process.StartInfo = startInfo;
-    process.Start();
 }
+
+
 public static class Native
 {
     public const int MB_OK = (int)0x00000000L;

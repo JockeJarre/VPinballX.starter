@@ -44,12 +44,14 @@ Table Name=x32
 Another Table=GL
 x32=x32
 GL=GL
+;Revert to older VPX 7.4 for certain tables
+X74=.RevertX7
+Old table=.RevertX7
 [VPinballX]
 ;Default value used when not found in the table below.
-Default=VPinballX74.exe
+Default=VPinballX85.exe
+Default.RevertX7=VPinballX74.exe
 ;File versions converted to the right VPinballXxx.exe
-10.60=VPinballX74.exe
-10.70=VPinballX74.exe
 10.72=VPinballX74.exe
 10.80=VPinballX85.exe
 10.80x32=VPinballX85x32.exe
@@ -132,6 +134,8 @@ Do you want to create this file now?";
         }
     }
     string strFileVersion = $"{fileVersion / 100}.{fileVersion % 100}";
+    if (configFileFromPath["VPinballX"][strFileVersion] == null)
+		strFileVersion = "Default";
 
     // Check the TableNameExceptions either for a Table Name within the list or a specific alien VPX version used (e.g x64, x32 or GL)
     if (configFileFromPath["TableNameExceptions"] != null)

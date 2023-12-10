@@ -15,7 +15,6 @@ GNU General Public License for more details: <https://www.gnu.org/licenses/>.
 */
 
 using System.Diagnostics;
-using System.IO.Pipes;
 using OpenMcdf;
 using System.Runtime.InteropServices;
 using Salaros.Configuration;
@@ -97,12 +96,15 @@ Do you want to create this file now?";
     }
 
     var configFileFromPath = new ConfigParser(strSettingsIniFilePath);
+    bool logVersions = (configFileFromPath["VPinballX.starter"]["LogVersions"] ?? "0").Equals("1");
 
     string tableFilename = "";
 
+    if (logVersions) LogToFile($"VPinballX.starter called with [{strExeFileName} " + String.Join(" ", args.Select(s => s.Contains(" ") ? $"\"{s}\"" : s).ToList()) +"]");
+
     foreach (string arg in args)
     {
-        if (arg.EndsWith(".vpx", StringComparison.OrdinalIgnoreCase))
+        if (arg.Trim('"').EndsWith(".vpx", StringComparison.OrdinalIgnoreCase))
         {
             tableFilename = arg;
             break;
@@ -119,6 +121,20 @@ Do you want to create this file now?";
 
     if (!tableFilename.Equals(""))
     {
+        // Somewhat Strange VPinballX behavior copied here... Remove leading - or / and quotes
+        char[] charsToTrim = { '-', '/', '"' };
+        tableFilename = tableFilename.Trim(charsToTrim);
+
+        // Again somewhat Strange VPinballX behavior copied here... if not a Windows drive letter first, then add current directory.
+        if (!tableFilename.Substring(1).StartsWith(":"))
+            tableFilename = $"{Directory.GetCurrentDirectory()}\\{tableFilename}";
+
+        if (!FileOrDirectoryExists(tableFilename))
+        {
+            if (logVersions) LogToFile($"Table file \"{tableFilename}\" cannot be found! Please check your frontend software!");
+            throw new FileNotFoundException($"Table file\n\n{tableFilename}\n\n cannot be found!\nPlease check your frontend software!");
+        }
+
         // Read the version of VPinballX.exe which saved this table
         var cf = new CompoundFile(tableFilename);
         try
@@ -144,7 +160,8 @@ Do you want to create this file now?";
         {
             if (tableFilename.Contains(key.Name))
             {
-                LogToFile($"Found {key.Name} in {tableFilename}");
+                if (logVersions) LogToFile($"Found {key.Name} in {tableFilename}");
+
                 if (configFileFromPath["VPinballX"][$"{strFileVersion}{key.ValueRaw}"] != null)
                 {
                     strFileVersion = $"{strFileVersion}{key.ValueRaw}";
@@ -162,7 +179,7 @@ Do you want to create this file now?";
     if (!Path.IsPathFullyQualified(vpxCommand))
         vpxCommand = Path.Combine(strExeFilePath, vpxCommand);
 
-    if ((configFileFromPath["VPinballX.starter"]["LogVersions"] ?? "0" ).Equals("1"))
+    if (logVersions)
     {
         if (!object.Equals(tableFilename, ""))
             LogToFile($"Found table version {strFileVersion} of \"{tableFilename}\" mapped to \"{vpxCommand}\"");

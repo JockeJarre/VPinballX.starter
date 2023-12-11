@@ -9,9 +9,9 @@
     <ApplicationIcon>VPinballX.starter.ico</ApplicationIcon>
     <Title>VPinballX version starter using an inifile</Title>
     <Product>VPinballX.starter</Product>
-    <AssemblyVersion>1.3</AssemblyVersion>
-    <Version>1.3</Version>
-    <FileVersion>1.3</FileVersion>
+    <AssemblyVersion>1.4</AssemblyVersion>
+    <Version>1.4</Version>
+    <FileVersion>1.4</FileVersion>
     <Copyright>©COPYRIGHTYEAR Richard Ludwig</Copyright>
     <Description>VPinballX.exe version starter using an inifile</Description>
     <IsTrimmable>true</IsTrimmable>

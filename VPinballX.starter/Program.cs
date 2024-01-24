@@ -234,6 +234,7 @@ void StartAnotherProgram(string programPath, string[] programArgs)
         process.Start();
 
         Console.WriteLine(process.StandardOutput.ReadToEnd());
+        process.WaitForInputIdle(20 * 1000);
         process.WaitForExit();
     }
 

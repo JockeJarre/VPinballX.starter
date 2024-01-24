@@ -13,8 +13,9 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details: <https://www.gnu.org/licenses/>.
 */
-
+using System;
 using System.Diagnostics;
+using System.Threading;
 using OpenMcdf;
 using System.Runtime.InteropServices;
 using Salaros.Configuration;
@@ -186,7 +187,12 @@ Do you want to create this file now?";
         else
             LogToFile($"Using default version {strFileVersion} mapped to \"{vpxCommand}\"");
     }
-    StartAnotherProgram(vpxCommand, args);
+
+    var startRetries = Int32.Parse(configFileFromPath["VPinballX.starter"]["StartSetries"] ?? "20");
+    bool started = StartAnotherProgram(vpxCommand, args, startRetries);
+    if (!started){
+        LogToFile($"Failed to start {vpxCommand}");
+    }
 
 }
 catch (ArgumentException e)
@@ -212,8 +218,9 @@ bool FileOrDirectoryExists(string name)
 {
     return Directory.Exists(name) || File.Exists(name);
 }
-void StartAnotherProgram(string programPath, string[] programArgs)
+bool StartAnotherProgram(string programPath, string[] programArgs, int startRetries)
 {
+    const int WAIT_FAILED = unchecked((int)0xFFFFFFFF);
 
     using (Process process = new Process())
     {
@@ -232,14 +239,46 @@ void StartAnotherProgram(string programPath, string[] programArgs)
         }
         process.StartInfo = startInfo;
         process.Start();
+        EventWaitHandle shutdownEvent = new EventWaitHandle(false, EventResetMode.ManualReset);
 
         Console.WriteLine(process.StandardOutput.ReadToEnd());
-        process.WaitForInputIdle(20 * 1000);
+        for (int tries = 0; tries < startRetries; ++tries)
+        {
+            // wait for "input idle" state
+            int result = WaitForInputIdle(process.Handle, 1000);
+
+            // if it's ready, return success
+            if (result == 0)
+                break;
+
+            // If the wait failed, pause briefly and try again.  For reasons
+            // unknown, the wait sometimes fails when called immediately on a 
+            // new process launched with Process.Start(), but will work if
+            // we give it a couple of seconds.
+            if (result == WAIT_FAILED)
+            {
+                Thread.Sleep(100);
+                continue;
+            }
+
+            // if the wait timed out, check if the exit event was signaled;
+            // if so, terminate the thread immediately
+            if (WaitForSingleObject(shutdownEvent.SafeWaitHandle.DangerousGetHandle(), 0) == 0)
+                process.Kill();
+                return false;
+        }
+
         process.WaitForExit();
+        return true;
     }
 
 }
 
+[System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+static extern int WaitForInputIdle(IntPtr hProcess, uint dwMilliseconds);
+
+[System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+static extern uint WaitForSingleObject(IntPtr hHandle, uint dwMilliseconds);
 
 public static class Native
 {
@@ -293,4 +332,6 @@ public static class Native
     [param: MarshalAs(UnmanagedType.LPWStr)] string lpText,
     [param: MarshalAs(UnmanagedType.LPWStr)] string lpCaption,
     UInt32 uType);
+
+
 }

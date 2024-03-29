@@ -4,7 +4,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
-    <UseWindowsForms>false</UseWindowsForms>
+    <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>VPinballX.starter.ico</ApplicationIcon>
     <Title>VPinballX version starter using an inifile</Title>
@@ -14,8 +14,19 @@
     <FileVersion>1.5</FileVersion>
     <Copyright>©COPYRIGHTYEAR Richard Ludwig</Copyright>
     <Description>VPinballX.exe version starter using an inifile</Description>
-    <IsTrimmable>true</IsTrimmable>
-    <PublishTrimmed>true</PublishTrimmed>
+    <IsTrimmable>false</IsTrimmable>
+    <PublishTrimmed>false</PublishTrimmed>
+    <Configurations>Debug;Release;Release and Deploy</Configurations>
+    <StartupObject>VPinballX.starter.App</StartupObject>
+    <RepositoryUrl>https://github.com/JockeJarre/VPinballX.starter</RepositoryUrl>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <Optimize>False</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release and Deploy|AnyCPU'">
+    <Optimize>True</Optimize>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,7 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="OpenMcdf" Version="2.3.0" />
+    <PackageReference Include="OpenMcdf" Version="2.3.1" />
     <PackageReference Include="Salaros.ConfigParser" Version="0.3.8" />
   </ItemGroup>
 

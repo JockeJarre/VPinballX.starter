@@ -21,7 +21,7 @@ jobs:
             config: Release
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v3
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '6.x'
       - id: version
@@ -45,7 +45,8 @@ jobs:
       - name: Build VPinballX.starter
         run: |
           cd VPinballX.starter
-          dotnet publish -r ${{ matrix.rid }} -c ${{ matrix.config }} -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained
+          dotnet build --configuration Release --no-restore
+          dotnet publish -r ${{ matrix.rid }} -c ${{ matrix.config }} --self-contained false -p:PublishSingleFile=true
       - name: Bundle 
         run: |
           mkdir tmp  
@@ -53,7 +54,7 @@ jobs:
           cp README.md tmp/VPinballX.starter.ReadMe.txt
           cp LICENSE tmp/LICENSE.GPL3
           cat doc/*.LICENSE.txt > tmp/VPinballX.starter.licenses.txt
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: VPinballX.starter-${{ steps.version.outputs.tag }}-${{ matrix.config }}-${{ matrix.rid }}
           path: tmp

@@ -9,24 +9,20 @@
     <ApplicationIcon>VPinballX.starter.ico</ApplicationIcon>
     <Title>VPinballX version starter using an inifile</Title>
     <Product>VPinballX.starter</Product>
-    <AssemblyVersion>1.5</AssemblyVersion>
-    <Version>1.5</Version>
-    <FileVersion>1.5</FileVersion>
+    <AssemblyVersion>1.6</AssemblyVersion>
+    <Version>1.6</Version>
+    <FileVersion>1.6</FileVersion>
     <Copyright>©COPYRIGHTYEAR Richard Ludwig</Copyright>
     <Description>VPinballX.exe version starter using an inifile</Description>
     <IsTrimmable>false</IsTrimmable>
     <PublishTrimmed>false</PublishTrimmed>
-    <Configurations>Debug;Release;Release and Deploy</Configurations>
+    <Configurations>Debug;Release</Configurations>
     <StartupObject>VPinballX.starter.App</StartupObject>
     <RepositoryUrl>https://github.com/JockeJarre/VPinballX.starter</RepositoryUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <Optimize>False</Optimize>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release and Deploy|AnyCPU'">
-    <Optimize>True</Optimize>
   </PropertyGroup>
 
   <ItemGroup>

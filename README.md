@@ -26,6 +26,9 @@ Default=VPinballX72.exe
 10.80=VPinballX85.exe
 10.80x32=VPinballX85x32.exe
 10.80GL=VPinballX85_GL.exe
+;cmd files to run before and after a table has been started, uncomment to activate.
+#PREcmd=${tablename}.pre.cmd
+#POSTcmd=${tablename}.post.cmd
 ```
 
 With this information, VPinballX.starter can be used as a replacement for VPinballX.exe.
@@ -82,3 +85,10 @@ Default=VPinballX64.74.exe
 
 Once you are happy with VPinballX.starter.exe, you can rename it to VPinballX.exe;
 it will take care of starting the right version independent if you are using Explorer, PinballX, PinballY or Pinup Popper.
+
+# PRE and POST cmd files
+
+The two settings PREcmd and POSTcmd can be used to run windows batch cmd files before and after a certain table is opened.
+PREcmd It can be used to setup the stage for a certain table, loading pictures or whatever comes to mind. And POSTcmd is
+then used to cleanup afterwards.
+As the default settings tells, it will search for a file called <tablename>.pre.cmd an call it if found.

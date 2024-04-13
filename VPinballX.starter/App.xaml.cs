@@ -261,7 +261,10 @@ Default.RevertX7=VPinballX74.exe
 10.72=VPinballX74.exe
 10.80=VPinballX85.exe
 10.80x32=VPinballX85x32.exe
-10.80GL=VPinballX85_GL.exe";
+10.80GL=VPinballX85_GL.exe
+;cmd files to run before and after a table has been started, uncomment to activate.
+;PREcmd=${tablename}.pre.cmd
+;POSTcmd=${tablename}.post.cmd";
 
                     string strWelcomeString =
             $@"Welcome new VPinballX.starter user!
@@ -395,11 +398,32 @@ Do you want to create this file now?";
                         LogToFile($"Using default version {strFileVersion} mapped to \"{vpxCommand}\"");
                 }
 
-
+                string tableName = Path.GetFileNameWithoutExtension(Path.GetFileName(tableFilename));
+                string preCommand = configFileFromPath["VPinballX"]["PREcmd"] ?? "";
+                if (!preCommand.Equals(""))
+                {
+                    LogToFile($"Calling found PREcmd: {preCommand}");
+                    preCommand = preCommand.Replace("${tablename}", tableName);
+                    preCommand = $"{Directory.GetCurrentDirectory()}\\{preCommand}";
+                    if (File.Exists(preCommand))
+                    {
+                        LogToFile($"Calling found PREcmd: {preCommand}");
+                        StartAnotherProgram(preCommand, mArgs, false);
+                    }
+                }
                 StartAnotherProgram(vpxCommand, mArgs);
-                //process.WaitForExit();
-                //process.Close();
-                //LogToFile("WaitForExit finished");
+                string postCommand = configFileFromPath["VPinballX"]["POSTcmd"] ?? "";
+                if (!postCommand.Equals(""))
+                {
+                    postCommand = postCommand.Replace("${tablename}", tableName);
+                    postCommand = $"{Directory.GetCurrentDirectory()}\\{postCommand}";
+
+                    if (File.Exists(postCommand))
+                    {
+                        LogToFile($"Calling found POSTcmd: {postCommand}");
+                        StartAnotherProgram(postCommand, mArgs, false);
+                    }
+                }
                 Environment.Exit(0);
 
             }
@@ -429,7 +453,7 @@ Do you want to create this file now?";
         {
             return Directory.Exists(name) || File.Exists(name);
         }
-        void StartAnotherProgram(string programPath, string[] programArgs)
+        void StartAnotherProgram(string programPath, string[] programArgs, bool addTracker = true)
         {
             using (Process process = new Process())
             {
@@ -448,10 +472,13 @@ Do you want to create this file now?";
                 }
                 process.StartInfo = startInfo;
                 process.Start();
+                if (addTracker)
+                {
                 // Add the Process to ChildProcessTracker.
                 ChildProcessTracker.AddProcess(process);
 
                 process.WaitForInputIdle(10000);
+                }
 
 
                 process.WaitForExit();

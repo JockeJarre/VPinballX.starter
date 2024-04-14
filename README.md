@@ -9,6 +9,11 @@ Using a small ini file similar to this one:
 ;DefaultVersion when started without any table param.
 DefaultVersion=10.80
 LogVersions=1
+;cmd files to run before and after a table has been started. Activate here:
+PREPOSTactive=false
+PREcmdExtension=.pre.cmd
+POSTcmdExtension=.post.cmd
+
 [TableNameExceptions]
 ;If left string is found in the Table filename
 ;we will use the right string to add to the version number search
@@ -16,6 +21,7 @@ Table Name=x32
 Another Table=GL
 x32=x32
 GL=GL
+
 [VPinballX]
 ;Default value to be used if not found in the table below.
 Default=VPinballX72.exe
@@ -26,9 +32,6 @@ Default=VPinballX72.exe
 10.80=VPinballX85.exe
 10.80x32=VPinballX85x32.exe
 10.80GL=VPinballX85_GL.exe
-;cmd files to run before and after a table has been started, uncomment to activate.
-#PREcmd=${tablename}.pre.cmd
-#POSTcmd=${tablename}.post.cmd
 ```
 
 With this information, VPinballX.starter can be used as a replacement for VPinballX.exe.
@@ -88,7 +91,9 @@ it will take care of starting the right version independent if you are using Exp
 
 # PRE and POST cmd files
 
-The two settings PREcmd and POSTcmd can be used to run windows batch cmd files before and after a certain table is opened.
-PREcmd It can be used to setup the stage for a certain table, loading pictures or whatever comes to mind. And POSTcmd is
-then used to cleanup afterwards.
-As the default settings tells, it will search for a file called <tablename>.pre.cmd an call it if found.
+The settings PREPOSTactive, PREcmd and POSTcmd can be used to run windows batch cmd files before and after a certain table is opened.
+PREcmd can be used to setup the stage for a certain table, loading pictures or whatever comes to mind. And POSTcmd is then used to cleanup afterwards.
+As the default settings tells, it will search for a file called <tablename>.pre.cmd and call it if found.
+If you start "Blood Machines (VPW 2022).vpx" it will try to find "Blood Machines (VPW 2022).pre.cmd" before starting the table.
+After the table has quit, "Blood Machines (VPW 2022).post.cmd" will be searched. It will also search for VPinballX.starter.pre/post.cmd and call it for every table started.
+Be sure to not start anything in these cmd batch files which block the script!

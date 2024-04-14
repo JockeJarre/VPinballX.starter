@@ -227,13 +227,13 @@ namespace VPinballX.starter
         }
         private void Application_Startup(object sender, StartupEventArgs eventArgs)
         {
+            string strSettingsIniFilePath = Path.Combine(strExeFilePath, strIniConfigFilename);
             if (eventArgs.Args.Length > 0)
             {
                 mArgs = eventArgs.Args;
             }
             try
             {
-                string strSettingsIniFilePath = Path.Combine(strExeFilePath, $"{strIniConfigFilename}");
 
                 if (!FileOrDirectoryExists(strSettingsIniFilePath))
                 {
@@ -243,6 +243,11 @@ namespace VPinballX.starter
 ;DefaultVersion when started without any table param.
 DefaultVersion=10.80
 LogVersions=1
+;cmd files to run before and after a table has been started. Activate here:
+PREPOSTactive=false
+PREcmdExtension=.pre.cmd
+POSTcmdExtension=.post.cmd
+
 [TableNameExceptions]
 ;If left string is found in the Table filename
 ;we will use the right string to add to the version number search
@@ -253,6 +258,7 @@ GL=GL
 ;Revert to older VPX 7.4 for certain tables
 X74=.RevertX7
 Old table=.RevertX7
+
 [VPinballX]
 ;Default value used when not found in the table below.
 Default=VPinballX85.exe
@@ -261,10 +267,7 @@ Default.RevertX7=VPinballX74.exe
 10.72=VPinballX74.exe
 10.80=VPinballX85.exe
 10.80x32=VPinballX85x32.exe
-10.80GL=VPinballX85_GL.exe
-;cmd files to run before and after a table has been started, uncomment to activate.
-;PREcmd=${tablename}.pre.cmd
-;POSTcmd=${tablename}.post.cmd";
+10.80GL=VPinballX85_GL.exe";
 
                     string strWelcomeString =
             $@"Welcome new VPinballX.starter user!
@@ -272,11 +275,8 @@ Default.RevertX7=VPinballX74.exe
 We could not find a ""{strIniConfigFilename}"" next to ""{strExeFileName}"". 
 
 The file should look like this:
-
 X-----X-----X-----X----X-----X-----X-----X-----X
-
 {strDefaultIniConfig}
-
 X-----X-----X-----X----X-----X-----X-----X-----X
 
 VPinballX.starter can therefore be used as a VPinballX.exe replacement.
@@ -284,9 +284,7 @@ VPinballX.starter can therefore be used as a VPinballX.exe replacement.
 It works like this:
 
 VPinballX.starter is started with exactly the same parameters as VPinballX.exe. First it loads the table file and finds out what version it was saved with. Then it takes that information and looks in the [VPinballX] table above to find out which version of VPinballX.xxx.exe you want to start with. It will then run the VPinballX.xxx.exe that you have configured using exactly the same parameters.
-
 If it cannot find a version in the table the default entry under [VPinballX] will be used. If you simply double-click the VPinballX.starter without any table, the Default under [VPinballx.starter] is used.
-
 This way the correct table version or the version you have chosen will always be used. Each time you start VPinballX, a log entry will be added to VPinballX.starter.log, telling which version was used. This can be turned of in the ini file.
 
 Do you want to create this file now?";
@@ -305,9 +303,10 @@ Do you want to create this file now?";
                         throw new FileNotFoundException($"Configuration \"{strSettingsIniFilePath}\" cannot be found!\n\nExiting");
                     }
                 }
+                string[] AllTrue = new string[] { "true", "1", "yes" };
 
                 var configFileFromPath = new ConfigParser(strSettingsIniFilePath);
-                bool logVersions = (configFileFromPath["VPinballX.starter"]["LogVersions"] ?? "0").Equals("1");
+                bool logVersions = AllTrue.Any((configFileFromPath["VPinballX.starter"]["LogVersions"] ?? "false").Trim().ToLower().Contains);
 
                 string tableFilename = "";
 
@@ -342,7 +341,7 @@ Do you want to create this file now?";
 
                     if (!FileOrDirectoryExists(tableFilename))
                     {
-                        if (logVersions) LogToFile($"Table file \"{tableFilename}\" cannot be found! Please check your frontend software!");
+                        LogToFile($"Table file \"{tableFilename}\" cannot be found! Please check your frontend software!");
                         throw new FileNotFoundException($"Table file\n\n{tableFilename}\n\n cannot be found!\nPlease check your frontend software!");
                     }
 
@@ -364,24 +363,26 @@ Do you want to create this file now?";
                 if (configFileFromPath["VPinballX"][strFileVersion] == null)
                     strFileVersion = "Default";
 
-                // Check the TableNameExceptions either for a Table Name within the list or a specific alien VPX version used (e.g x64, x32 or GL)
-                if (configFileFromPath["TableNameExceptions"] != null)
+                if (!tableFilename.Equals(""))
                 {
-                    foreach (var key in configFileFromPath["TableNameExceptions"].Keys)
+                    // Check the TableNameExceptions either for a Table Name within the list or a specific alien VPX version used (e.g x64, x32 or GL)
+                    if (configFileFromPath["TableNameExceptions"] != null)
                     {
-                        if (tableFilename.Contains(key.Name))
+                        foreach (var key in configFileFromPath["TableNameExceptions"].Keys)
                         {
-                            if (logVersions) LogToFile($"Found {key.Name} in {tableFilename}");
-
-                            if (configFileFromPath["VPinballX"][$"{strFileVersion}{key.ValueRaw}"] != null)
+                            if (tableFilename.Contains(key.Name))
                             {
-                                strFileVersion = $"{strFileVersion}{key.ValueRaw}";
-                                break;
+                                if (logVersions) LogToFile($"Found {key.Name} in {tableFilename}");
+
+                                if (configFileFromPath["VPinballX"][$"{strFileVersion}{key.ValueRaw}"] != null)
+                                {
+                                    strFileVersion = $"{strFileVersion}{key.ValueRaw}";
+                                    break;
+                                }
                             }
                         }
                     }
                 }
-
                 string vpxCommand = configFileFromPath["VPinballX"][strFileVersion] ?? configFileFromPath["VPinballX"]["Default"];
 
                 if (object.Equals(vpxCommand, null))
@@ -398,31 +399,17 @@ Do you want to create this file now?";
                         LogToFile($"Using default version {strFileVersion} mapped to \"{vpxCommand}\"");
                 }
 
-                string tableName = Path.GetFileNameWithoutExtension(Path.GetFileName(tableFilename));
-                string preCommand = configFileFromPath["VPinballX"]["PREcmd"] ?? "";
-                if (!preCommand.Equals(""))
+                bool PREPOSTactive = AllTrue.Any((configFileFromPath["VPinballX.starter"]["PREPOSTactive"] ?? "false").Trim().ToLower().Contains);
+                if(PREPOSTactive && (!tableFilename.Equals("")))
                 {
-                    LogToFile($"Calling found PREcmd: {preCommand}");
-                    preCommand = preCommand.Replace("${tablename}", tableName);
-                    preCommand = $"{Directory.GetCurrentDirectory()}\\{preCommand}";
-                    if (File.Exists(preCommand))
-                    {
-                        LogToFile($"Calling found PREcmd: {preCommand}");
-                        StartAnotherProgram(preCommand, mArgs, false);
-                    }
+                    StartPrePostCommands(configFileFromPath["VPinballX.starter"]["PREcmdExtension"] ?? ".pre.cmd", strSettingsIniFilePath);
+                    StartPrePostCommands(configFileFromPath["VPinballX.starter"]["PREcmdExtension"] ?? ".pre.cmd", tableFilename);
                 }
                 StartAnotherProgram(vpxCommand, mArgs);
-                string postCommand = configFileFromPath["VPinballX"]["POSTcmd"] ?? "";
-                if (!postCommand.Equals(""))
-                {
-                    postCommand = postCommand.Replace("${tablename}", tableName);
-                    postCommand = $"{Directory.GetCurrentDirectory()}\\{postCommand}";
-
-                    if (File.Exists(postCommand))
-                    {
-                        LogToFile($"Calling found POSTcmd: {postCommand}");
-                        StartAnotherProgram(postCommand, mArgs, false);
-                    }
+                if (PREPOSTactive && (!tableFilename.Equals("")))
+                { 
+                    StartPrePostCommands(configFileFromPath["VPinballX.starter"]["POSTcmdExtension"] ?? ".post.cmd", tableFilename);
+                    StartPrePostCommands(configFileFromPath["VPinballX.starter"]["POSTcmdExtension"] ?? ".post.cmd", strSettingsIniFilePath);
                 }
                 Environment.Exit(0);
 
@@ -442,7 +429,20 @@ Do you want to create this file now?";
             Environment.Exit(1);
 
         }
+        void StartPrePostCommands(string prepostExtension, string scriptBasedFilename)
+        {
+            if (!prepostExtension.Equals(""))
+            {
+                string prepostCommand = Path.ChangeExtension(scriptBasedFilename, prepostExtension);
 
+                if (File.Exists(prepostCommand))
+                {
+                    LogToFile($"Calling found PRE/POSTcmd: {prepostCommand}");
+                    StartAnotherProgram(prepostCommand, mArgs, false);
+                }
+            }
+
+        }
         void LogToFile(string logText)
         {
             using (var sw = File.AppendText(strLogFilename))

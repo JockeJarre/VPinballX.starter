@@ -32,6 +32,7 @@
   <ItemGroup>
     <PackageReference Include="OpenMcdf" Version="2.3.1" />
     <PackageReference Include="Salaros.ConfigParser" Version="0.3.8" />
+    <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>

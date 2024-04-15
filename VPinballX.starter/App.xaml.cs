@@ -18,6 +18,7 @@ using System.Data;
 using System.Windows;
 using System.IO;
 using System.Diagnostics;
+using System.Management;
 using OpenMcdf;
 using System.Runtime.InteropServices;
 using Salaros.Configuration;
@@ -228,6 +229,8 @@ namespace VPinballX.starter
         private void Application_Startup(object sender, StartupEventArgs eventArgs)
         {
             string strSettingsIniFilePath = Path.Combine(strExeFilePath, strIniConfigFilename);
+            string parentProcessName = ParentProcessName();
+
             if (eventArgs.Args.Length > 0)
             {
                 mArgs = eventArgs.Args;
@@ -247,6 +250,8 @@ LogVersions=1
 PREPOSTactive=false
 PREcmdExtension=.pre.cmd
 POSTcmdExtension=.post.cmd
+;you can have different settings depending on the caller: (Pinup popper show up as anonymous)
+PREcmdExtension.explorer=.explorerpre.cmd
 
 [TableNameExceptions]
 ;If left string is found in the Table filename
@@ -310,7 +315,7 @@ Do you want to create this file now?";
 
                 string tableFilename = "";
 
-                if (logVersions) LogToFile($"VPinballX.starter called with [{strExeFileName} " + String.Join(" ", mArgs.Select(s => s.Contains(" ") ? $"\"{s}\"" : s).ToList()) + "]");
+                if (logVersions) LogToFile($"{parentProcessName} called VPinballX.starter with [{strExeFileName} " + String.Join(" ", mArgs.Select(s => s.Contains(" ") ? $"\"{s}\"" : s).ToList()) + "]");
 
                 foreach (string arg in mArgs)
                 {
@@ -399,17 +404,23 @@ Do you want to create this file now?";
                         LogToFile($"Using default version {strFileVersion} mapped to \"{vpxCommand}\"");
                 }
 
-                bool PREPOSTactive = AllTrue.Any((configFileFromPath["VPinballX.starter"]["PREPOSTactive"] ?? "false").Trim().ToLower().Contains);
-                if(PREPOSTactive && (!tableFilename.Equals("")))
+                bool PREPOSTactive = AllTrue.Any((configFileFromPath["VPinballX.starter"][$"PREPOSTactive.{parentProcessName}"] ?? configFileFromPath["VPinballX.starter"]["PREPOSTactive"] ?? "false").Trim().ToLower().Contains);
+
+                if (PREPOSTactive && (!tableFilename.Equals("")))
                 {
-                    StartPrePostCommands(configFileFromPath["VPinballX.starter"]["PREcmdExtension"] ?? ".pre.cmd", strSettingsIniFilePath);
-                    StartPrePostCommands(configFileFromPath["VPinballX.starter"]["PREcmdExtension"] ?? ".pre.cmd", tableFilename);
+                    List<string> PREcmdExtensions = new List<string> {configFileFromPath["VPinballX.starter"][$"PREcmdExtension.{parentProcessName}"],
+                                                 configFileFromPath["VPinballX.starter"]["PREcmdExtension"], ".pre.cmd" };
+
+                    StartPrePostCommands(PREcmdExtensions, strSettingsIniFilePath);
+                    StartPrePostCommands(PREcmdExtensions, tableFilename);
                 }
                 StartAnotherProgram(vpxCommand, mArgs);
                 if (PREPOSTactive && (!tableFilename.Equals("")))
-                { 
-                    StartPrePostCommands(configFileFromPath["VPinballX.starter"]["POSTcmdExtension"] ?? ".post.cmd", tableFilename);
-                    StartPrePostCommands(configFileFromPath["VPinballX.starter"]["POSTcmdExtension"] ?? ".post.cmd", strSettingsIniFilePath);
+                {
+                    List<string> POSTcmdExtensions = new List<string> {configFileFromPath["VPinballX.starter"][$"POSTcmdExtension.{parentProcessName}"],
+                                                 configFileFromPath["VPinballX.starter"]["POSTcmdExtension"], ".post.cmd" };
+                    StartPrePostCommands(POSTcmdExtensions, tableFilename);
+                    StartPrePostCommands(POSTcmdExtensions, strSettingsIniFilePath);
                 }
                 Environment.Exit(0);
 
@@ -429,19 +440,22 @@ Do you want to create this file now?";
             Environment.Exit(1);
 
         }
-        void StartPrePostCommands(string prepostExtension, string scriptBasedFilename)
+        void StartPrePostCommands(List<string> prepostExtensions, string scriptBasedFilename)
         {
-            if (!prepostExtension.Equals(""))
+            foreach (var prepostExtension in prepostExtensions)
             {
-                string prepostCommand = Path.ChangeExtension(scriptBasedFilename, prepostExtension);
-
-                if (File.Exists(prepostCommand))
+                if (prepostExtension is not null && !prepostExtension.Equals(""))
                 {
-                    LogToFile($"Calling found PRE/POSTcmd: {prepostCommand}");
-                    StartAnotherProgram(prepostCommand, mArgs, false);
+                    string prepostCommand = Path.ChangeExtension(scriptBasedFilename, prepostExtension);
+
+                    if (File.Exists(prepostCommand))
+                    {
+                        LogToFile($"Calling found PRE/POSTcmd: {prepostCommand}");
+                        StartAnotherProgram(prepostCommand, mArgs, false);
+                        return;
+                    }
                 }
             }
-
         }
         void LogToFile(string logText)
         {
@@ -452,6 +466,25 @@ Do you want to create this file now?";
         bool FileOrDirectoryExists(string name)
         {
             return Directory.Exists(name) || File.Exists(name);
+        }
+        string ParentProcessName()
+        {
+            try {
+                var myId = Process.GetCurrentProcess().Id;
+                var query = string.Format("SELECT ParentProcessId FROM Win32_Process WHERE ProcessId = {0}", myId);
+                var search = new ManagementObjectSearcher("root\\CIMV2", query);
+                var results = search.Get().GetEnumerator();
+                results.MoveNext();
+                var queryObj = results.Current;
+                var parentId = (uint)queryObj["ParentProcessId"];
+                var parent = Process.GetProcessById((int)parentId);
+                return Path.GetFileNameWithoutExtension(parent.ProcessName);
+            }
+            catch (Exception e)
+            {
+                LogToFile($"ParentProcessName could not be found (can be referenced as 'anonymous' in the config): {e.Message}");
+                return "anonymous";
+            }
         }
         void StartAnotherProgram(string programPath, string[] programArgs, bool addTracker = true)
         {
@@ -474,10 +507,10 @@ Do you want to create this file now?";
                 process.Start();
                 if (addTracker)
                 {
-                // Add the Process to ChildProcessTracker.
-                ChildProcessTracker.AddProcess(process);
+                    // Add the Process to ChildProcessTracker.
+                    ChildProcessTracker.AddProcess(process);
 
-                process.WaitForInputIdle(10000);
+                    process.WaitForInputIdle(10000);
                 }
 
 

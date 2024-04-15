@@ -13,6 +13,9 @@ LogVersions=1
 PREPOSTactive=false
 PREcmdExtension=.pre.cmd
 POSTcmdExtension=.post.cmd
+;you can have different settings depending on the caller: (Pinup popper show up as anonymous)
+PREcmdExtension.explorer=.explorerpre.cmd
+POSTcmdExtension.explorer=.explorerpost.cmd
 
 [TableNameExceptions]
 ;If left string is found in the Table filename
@@ -96,4 +99,24 @@ PREcmd can be used to setup the stage for a certain table, loading pictures or w
 As the default settings tells, it will search for a file called <tablename>.pre.cmd and call it if found.
 If you start "Blood Machines (VPW 2022).vpx" it will try to find "Blood Machines (VPW 2022).pre.cmd" before starting the table.
 After the table has quit, "Blood Machines (VPW 2022).post.cmd" will be searched. It will also search for VPinballX.starter.pre/post.cmd and call it for every table started.
-Be sure to not start anything in these cmd batch files which block the script!
+
+When VPinballX.starter is triggered it tries to find the process name of the caller. When starting a table from Windows Explorer, the caller is "explorer".
+This information can be used to have different PRE and POST scripts depending on the caller:
+
+``` ini
+;A Configuration file for VPinballX.starter
+[VPinballX.starter]
+;cmd files to run before and after a table has been started. Activate here:
+PREPOSTactive=false
+PREcmdExtension=.pre.cmd
+POSTcmdExtension=.post.cmd
+;you can have different settings depending on the caller: (Pinup popper show up as anonymous)
+PREPOSTactive.explorer=true
+PREcmdExtension.explorer=.explorerpre.cmd
+POSTcmdExtension.explorer=.explorerpost.cmd
+```
+
+It will search the settings in the order <setting>.<caller> and then <setting>. If a more specific setting exists and the file exists, that one will be used.
+
+
+**Be sure to not start anything in these cmd batch files which block the script!**

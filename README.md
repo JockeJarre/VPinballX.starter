@@ -11,11 +11,20 @@ DefaultVersion=10.80
 LogVersions=1
 ;cmd files to run before and after a table has been started. Activate here:
 PREPOSTactive=false
+;The first argument will become the table name, complete command line parameters follow
+FirstArgTableName=true
+;The filename extension for VPinballX.starter.pre.cmd and tablename.pre.cmd
 PREcmdExtension=.pre.cmd
 POSTcmdExtension=.post.cmd
-;you can have different settings depending on the caller: (Pinup popper show up as anonymous)
-PREcmdExtension.explorer=.explorerpre.cmd
-POSTcmdExtension.explorer=.explorerpost.cmd
+
+;you can have different settings depending on the caller:
+;First VPinballX.starter.preexplorer.cmd then VPinballX.starter.pre.cmd
+#PREcmdExtension.explorer=.preexplorer.cmd
+#POSTcmdExtension.explorer=.postexplorer.cmd
+
+; If the parent process cannot be found (Pinup popper show up as 'anonymous')
+#PREcmdExtension.anonymous=.preanon.cmd
+#POSTcmdExtension.anonymous=.preanon.cmd
 
 [TableNameExceptions]
 ;If left string is found in the Table filename
@@ -111,12 +120,8 @@ PREPOSTactive=false
 PREcmdExtension=.pre.cmd
 POSTcmdExtension=.post.cmd
 ;you can have different settings depending on the caller: (Pinup popper show up as anonymous)
-PREPOSTactive.explorer=true
 PREcmdExtension.explorer=.explorerpre.cmd
 POSTcmdExtension.explorer=.explorerpost.cmd
 ```
-
-It will search the settings in the order <setting>.<caller> and then <setting>. If a more specific setting exists and the file exists, that one will be used.
-
 
 **Be sure to not start anything in these cmd batch files which block the script!**

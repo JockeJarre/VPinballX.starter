@@ -235,6 +235,7 @@ namespace VPinballX.starter
             {
                 mArgs = eventArgs.Args;
             }
+
             try
             {
 
@@ -248,10 +249,20 @@ DefaultVersion=10.80
 LogVersions=1
 ;cmd files to run before and after a table has been started. Activate here:
 PREPOSTactive=false
+;The first argument will become the table name, complete command line parameters follow
+FirstArgTableName=true
+;The filename extension for VPinballX.starter.pre.cmd and tablename.pre.cmd
 PREcmdExtension=.pre.cmd
 POSTcmdExtension=.post.cmd
-;you can have different settings depending on the caller: (Pinup popper show up as anonymous)
-PREcmdExtension.explorer=.explorerpre.cmd
+
+;you can have different settings depending on the caller:
+;First VPinballX.starter.preexplorer.cmd then VPinballX.starter.pre.cmd
+#PREcmdExtension.explorer=.preexplorer.cmd
+#POSTcmdExtension.explorer=.postexplorer.cmd
+
+; If the parent process cannot be found (Pinup popper show up as 'anonymous')
+#PREcmdExtension.anonymous=.preanon.cmd
+#POSTcmdExtension.anonymous=.preanon.cmd
 
 [TableNameExceptions]
 ;If left string is found in the Table filename
@@ -325,6 +336,7 @@ Do you want to create this file now?";
                         break;
                     }
                 }
+                string[] argsWithTable = mArgs;
                 string defaultFileVersion = configFileFromPath["VPinballX.starter"]["DefaultVersion"];
 
                 if (object.Equals(defaultFileVersion, null))
@@ -404,23 +416,28 @@ Do you want to create this file now?";
                         LogToFile($"Using default version {strFileVersion} mapped to \"{vpxCommand}\"");
                 }
 
-                bool PREPOSTactive = AllTrue.Any((configFileFromPath["VPinballX.starter"][$"PREPOSTactive.{parentProcessName}"] ?? configFileFromPath["VPinballX.starter"]["PREPOSTactive"] ?? "false").Trim().ToLower().Contains);
+                bool PREPOSTactive = AllTrue.Any((configFileFromPath["VPinballX.starter"]["PREPOSTactive"] ?? "false").Trim().ToLower().Contains);
 
                 if (PREPOSTactive && (!tableFilename.Equals("")))
                 {
+                    if (AllTrue.Any((configFileFromPath["VPinballX.starter"]["FirstArgTableName"] ?? "false").Trim().ToLower().Contains)){
+                        // First arg is the table filename
+                        argsWithTable = new string[] { tableFilename }.Concat(mArgs).ToArray();
+                    }
                     List<string> PREcmdExtensions = new List<string> {configFileFromPath["VPinballX.starter"][$"PREcmdExtension.{parentProcessName}"],
-                                                 configFileFromPath["VPinballX.starter"]["PREcmdExtension"], ".pre.cmd" };
+                                                 configFileFromPath["VPinballX.starter"]["PREcmdExtension"] ?? ".pre.cmd" };
 
-                    StartPrePostCommands(PREcmdExtensions, strSettingsIniFilePath);
-                    StartPrePostCommands(PREcmdExtensions, tableFilename);
+                    StartPrePostCommands(PREcmdExtensions, strSettingsIniFilePath, argsWithTable);
+                    StartPrePostCommands(PREcmdExtensions, tableFilename, argsWithTable);
                 }
                 StartAnotherProgram(vpxCommand, mArgs);
                 if (PREPOSTactive && (!tableFilename.Equals("")))
                 {
                     List<string> POSTcmdExtensions = new List<string> {configFileFromPath["VPinballX.starter"][$"POSTcmdExtension.{parentProcessName}"],
-                                                 configFileFromPath["VPinballX.starter"]["POSTcmdExtension"], ".post.cmd" };
-                    StartPrePostCommands(POSTcmdExtensions, tableFilename);
-                    StartPrePostCommands(POSTcmdExtensions, strSettingsIniFilePath);
+                                                 configFileFromPath["VPinballX.starter"]["POSTcmdExtension"] ?? ".post.cmd" };
+
+                    StartPrePostCommands(POSTcmdExtensions, tableFilename, argsWithTable);
+                    StartPrePostCommands(POSTcmdExtensions, strSettingsIniFilePath, argsWithTable);
                 }
                 Environment.Exit(0);
 
@@ -440,7 +457,7 @@ Do you want to create this file now?";
             Environment.Exit(1);
 
         }
-        void StartPrePostCommands(List<string> prepostExtensions, string scriptBasedFilename)
+        void StartPrePostCommands(List<string> prepostExtensions, string scriptBasedFilename, string[] mArgs)
         {
             foreach (var prepostExtension in prepostExtensions)
             {
@@ -452,7 +469,6 @@ Do you want to create this file now?";
                     {
                         LogToFile($"Calling found PRE/POSTcmd: {prepostCommand}");
                         StartAnotherProgram(prepostCommand, mArgs, false);
-                        return;
                     }
                 }
             }

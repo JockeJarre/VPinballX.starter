@@ -26,6 +26,10 @@ POSTcmdExtension=.post.cmd
 #PREcmdExtension.anonymous=.preanon.cmd
 #POSTcmdExtension.anonymous=.preanon.cmd
 
+; Add parameters to the command line
+AddParameter=-Primary
+AddParameter.-play=-Minimized
+
 [TableNameExceptions]
 ;If left string is found in the Table filename
 ;we will use the right string to add to the version number search
@@ -125,3 +129,15 @@ POSTcmdExtension.explorer=.explorerpost.cmd
 ```
 
 **Be sure to not start anything in these cmd batch files which block the script!**
+
+# Adding VPX parameters
+
+It is possible to add parameters to the VPX calls by setting certain Configuration options:
+
+``` ini
+; Add parameters to the command line
+AddParameter=-Primary
+AddParameter.-play=-Minimized
+```
+
+AddParameter on it's own means it is always added independent on other command line options. `AddParameter.-play` means that the parameters are only added if the current command line contain `-play`. The above example set VPX to use the Primary screen and when started as "play", the VPX windows is minimized.

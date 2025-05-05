@@ -9,9 +9,9 @@
     <ApplicationIcon>VPinballX.starter.ico</ApplicationIcon>
     <Title>VPinballX version starter using an inifile</Title>
     <Product>VPinballX.starter</Product>
-    <AssemblyVersion>1.8</AssemblyVersion>
-    <Version>1.8</Version>
-    <FileVersion>1.8</FileVersion>
+    <AssemblyVersion>1.9</AssemblyVersion>
+    <Version>1.9</Version>
+    <FileVersion>1.9</FileVersion>
     <Copyright>©COPYRIGHTYEAR Richard Ludwig</Copyright>
     <Description>VPinballX.exe version starter using an inifile</Description>
     <IsTrimmable>false</IsTrimmable>
@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="OpenMcdf" Version="2.3.1" />
+    <PackageReference Include="OpenMcdf" Version="2.4.1" />
     <PackageReference Include="Salaros.ConfigParser" Version="0.3.8" />
     <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>

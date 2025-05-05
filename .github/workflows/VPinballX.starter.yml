@@ -50,7 +50,7 @@ jobs:
       - name: Bundle 
         run: |
           mkdir tmp  
-          cp VPinballX.starter/bin/Release/net6.0-windows/win-x64/publish/VPinballX.starter.exe tmp
+          cp VPinballX.starter/bin/Release/net8.0-windows/publish/win-x64 tmp
           cp README.md tmp/VPinballX.starter.ReadMe.txt
           cp LICENSE tmp/LICENSE.GPL3
           cat doc/*.LICENSE.txt > tmp/VPinballX.starter.licenses.txt

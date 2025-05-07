@@ -1,7 +1,7 @@
 ﻿/*
 The GPLv3+ License:
 
-Copyright (C) 2023-2024 Richard Ludwig and contributors
+Copyright (C) 2023-2025 Richard Ludwig and contributors
 
 VPinballX.starter is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

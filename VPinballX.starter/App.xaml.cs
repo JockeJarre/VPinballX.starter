@@ -24,6 +24,7 @@ using System.Runtime.InteropServices;
 using Salaros.Configuration;
 using System.ComponentModel;
 using System.Xml.Linq;
+using System.Threading;
 
 
 namespace VPinballX.starter
@@ -226,6 +227,26 @@ namespace VPinballX.starter
             [param: MarshalAs(UnmanagedType.LPWStr)] string lpText,
             [param: MarshalAs(UnmanagedType.LPWStr)] string lpCaption,
             UInt32 uType);
+
+            [DllImport("user32.dll")]
+            public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+            [DllImport("user32.dll")]
+            public static extern bool IsIconic(IntPtr hWnd);
+
+            [DllImport("user32.dll")]
+            public static extern IntPtr SetFocus(IntPtr hWnd);
+
+            [DllImport("user32.dll")]
+            public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+            public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+            [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+            public static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
+
+            [DllImport("user32.dll")]
+            public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
         }
         private void Application_Startup(object sender, StartupEventArgs eventArgs)
         {
@@ -549,16 +570,50 @@ Do you want to create this file now?";
                 process.Start();
                 if (addTracker)
                 {
-                    // Add the Process to ChildProcessTracker.
                     ChildProcessTracker.AddProcess(process);
-
                     process.WaitForInputIdle(10000);
                 }
 
+                // Try to activate the window with the title "Visual Pinball Player" if it is not minimized and set focus
+                IntPtr hWnd = IntPtr.Zero;
+                for (int i = 0; i < 20; i++)
+                {
+                    hWnd = FindWindowByTitle(process.Id, "Visual Pinball Player");
+                    if (hWnd != IntPtr.Zero)
+                        break;
+                    Thread.Sleep(100);
+                }
+                if (hWnd != IntPtr.Zero && !Native.IsIconic(hWnd))
+                {
+                    Native.SetForegroundWindow(hWnd);
+                    Native.SetFocus(hWnd);
+                }
 
                 process.WaitForExit();
                 process.Close();
             }
+        }
+
+        private IntPtr FindWindowByTitle(int processId, string windowTitle)
+        {
+            IntPtr foundHwnd = IntPtr.Zero;
+            Native.EnumWindows((hWnd, lParam) =>
+            {
+                uint winProcId;
+                Native.GetWindowThreadProcessId(hWnd, out winProcId);
+                if (winProcId == processId)
+                {
+                    var sb = new System.Text.StringBuilder(256);
+                    Native.GetWindowText(hWnd, sb, sb.Capacity);
+                    if (sb.ToString() == windowTitle)
+                    {
+                        foundHwnd = hWnd;
+                        return false; // stop enumeration
+                    }
+                }
+                return true; // continue enumeration
+            }, IntPtr.Zero);
+            return foundHwnd;
         }
 
     }

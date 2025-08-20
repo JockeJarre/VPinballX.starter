@@ -114,7 +114,7 @@ VPinballX.starter.sln              # Main solution file
 ### CI/CD Pipeline
 Located in `.github/workflows/`:
 - **`VPinballX.starter.yml`**: Main build workflow triggered on all pushes
-  - Uses Windows 2019 runner
+  - Uses Windows latest runner (windows-latest)
   - Builds for win-x64 architecture
   - Creates artifacts with version tagging
   - Bundles with documentation and licenses

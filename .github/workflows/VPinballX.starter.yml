@@ -12,7 +12,7 @@ defaults:
 jobs:
   build-server:
     name: Build VPinballX.starter-${{ matrix.config }}-win-${{ matrix.platform }}
-    runs-on: windows-2019
+    runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '6.x'
+          dotnet-version: '8.x'
       - id: version
         name: Update AssemblyInformationalVersion
         run: |
@@ -38,13 +38,10 @@ jobs:
           YEAR="$(date +'%Y')"
           perl -i -pe"s/COPYRIGHTYEAR/${YEAR}/g" "${ASSEMBLY_INFO}"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
-      - name: Install dependencies
-        run: |
-          dotnet add VPinballX.starter package Salaros.ConfigParser --version 0.3.8
-          dotnet add VPinballX.starter package OpenMcdf --version 2.3.0
       - name: Build VPinballX.starter
         run: |
           cd VPinballX.starter
+          dotnet restore
           dotnet build --configuration Release --no-restore
           dotnet publish -r ${{ matrix.rid }} -c ${{ matrix.config }} --self-contained false -p:PublishSingleFile=true
       - name: Bundle 

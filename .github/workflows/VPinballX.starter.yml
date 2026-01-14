@@ -12,7 +12,7 @@ defaults:
 jobs:
   build-server:
     name: Build VPinballX.starter-${{ matrix.config }}-win-${{ matrix.platform }}
-    runs-on: windows-latest
+    runs-on: windows-2025
     strategy:
       fail-fast: false
       matrix:

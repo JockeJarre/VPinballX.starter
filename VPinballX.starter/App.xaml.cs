@@ -1,7 +1,7 @@
 ﻿/*
 The GPLv3+ License:
 
-Copyright (C) 2023-2025 Richard Ludwig and contributors
+Copyright (C) 2023-2026 Richard Ludwig and contributors
 
 VPinballX.starter is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -474,8 +474,38 @@ Do you want to create this file now?";
                             LogToFile($"Amend \"{key.Name}\" setting to the call parameters: {String.Join(" ", mArgs)}");
                         }
                     }
+
+                    if (key?.Name.StartsWith("AddPATH") == true)
+                    {
+                        if ( (key.Name.Contains(".") && tableFilename.Contains(key.Name.Split(".").Last()) ) || ! key.Name.Contains("."))
+                        {
+                            string pathToAdd = configFileFromPath["VPinballX.starter"][key.Name];
+                            // Get the existing PATH
+                            string existingPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process) ?? "";
+
+                            if (existingPath.Contains(pathToAdd))
+                            {
+                                LogToFile($"PATH setting already contains: {pathToAdd} ");
+                                continue;
+                            }
+                            // Append your new entries (avoid duplicates if needed)
+                            string updatedPath = pathToAdd + ";" + existingPath;
+
+                            // Set the PATH for the process scope
+                            Environment.SetEnvironmentVariable("PATH", updatedPath, EnvironmentVariableTarget.Process);
+                            LogToFile($"Amended the PATH setting: {pathToAdd} ");
+                        }
+                    }
                 }
 
+
+                if (IsVPinballProcessRunning(vpxCommand))
+                {
+                    string warnText = $"Another VPinball process is already running. Close it before starting:\n{vpxCommand}";
+                    LogToFile(warnText);
+                    Native.MessageBoxW(IntPtr.Zero, warnText, $"{strExeFileName}: Already running", Native.MB_OK | Native.MB_ICONEXCLAMATION);
+                    Environment.Exit(1);
+                }
 
                 StartAnotherProgram(vpxCommand, mArgs.ToArray());
                 if (PREPOSTactive && (!tableFilename.Equals("")))
@@ -548,6 +578,44 @@ Do you want to create this file now?";
                 LogToFile($"ParentProcessName could not be found (can be referenced as 'anonymous' in the config): {e.Message}");
                 return "anonymous";
             }
+        }
+        bool IsVPinballProcessRunning(string programPath)
+        {
+            string targetName = Path.GetFileNameWithoutExtension(programPath);
+            try
+            {
+                if (Process.GetProcessesByName(targetName).Any())
+                    return true;
+                // Additional check for VPinball processes unless it is the current executable
+                if (targetName.StartsWith("VPinball", StringComparison.OrdinalIgnoreCase))
+                {
+                    bool found = false;
+                    foreach (var proc in Process.GetProcesses())
+                    {
+                        try
+                        {
+                            if (proc.ProcessName.StartsWith("VPinball", StringComparison.OrdinalIgnoreCase) & !proc.ProcessName.Equals(Process.GetCurrentProcess().ProcessName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                found = true;
+                                break;
+                            }
+                        }
+                        catch { }
+                        finally
+                        {
+                            proc.Dispose();
+                        }
+                    }
+                    if (found)
+                        return true;
+                }
+            }
+            catch (Exception e)
+            {
+                LogToFile($"Process check failed for {programPath}: {e.Message}");
+            }
+
+            return false;
         }
         void StartAnotherProgram(string programPath, string[] programArgs, bool addTracker = true)
         {

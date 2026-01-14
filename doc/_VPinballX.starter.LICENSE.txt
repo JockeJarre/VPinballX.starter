@@ -1,6 +1,6 @@
     VPinball.starter VPinballX version starter using an inifile
 
-    Copyright (C) 2023-2023  Richard Ludwig
+    Copyright (C) 2023-2026  Richard Ludwig
 
     VPinball.starter is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

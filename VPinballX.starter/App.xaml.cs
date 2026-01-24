@@ -269,6 +269,8 @@ namespace VPinballX.starter
 ;DefaultVersion when started without any table param.
 DefaultVersion=10.80
 LogVersions=true
+;Window activation (title, timeout in seconds)
+ActivateWindow=""Visual Pinball Player"", timeout=10
 ;cmd files to run before and after a table has been started. Activate here:
 PREPOSTactive=false
 ;The first argument will become the table name, complete command line parameters follow
@@ -349,6 +351,30 @@ Do you want to create this file now?";
 
                 var configFileFromPath = new ConfigParser(strSettingsIniFilePath);
                 bool logVersions = AllTrue.Any((configFileFromPath["VPinballX.starter"]["LogVersions"] ?? "false").Trim().ToLower().Contains);
+
+                // Window activation defaults
+                string activateWindowTitle = "Visual Pinball Player";
+                int activateWindowTimeoutMs = 10000;
+
+                string activateWindowSetting = configFileFromPath["VPinballX.starter"]["ActivateWindow"];
+                if (!string.IsNullOrWhiteSpace(activateWindowSetting))
+                {
+                    foreach (var part in activateWindowSetting.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        string trimmedPart = part.Trim();
+
+                        if (trimmedPart.StartsWith("timeout", StringComparison.OrdinalIgnoreCase))
+                        {
+                            string[] timeoutSplit = trimmedPart.Split('=');
+                            if (timeoutSplit.Length == 2 && Int32.TryParse(timeoutSplit[1], out int timeoutSeconds))
+                                activateWindowTimeoutMs = timeoutSeconds * 1000;
+                        }
+                        else
+                        {
+                            activateWindowTitle = trimmedPart.Trim('"');
+                        }
+                    }
+                }
 
                 string tableFilename = "";
 
@@ -507,7 +533,7 @@ Do you want to create this file now?";
                     Environment.Exit(1);
                 }
 
-                StartAnotherProgram(vpxCommand, mArgs.ToArray());
+                StartAnotherProgram(vpxCommand, mArgs.ToArray(), true, activateWindowTitle, activateWindowTimeoutMs);
                 if (PREPOSTactive && (!tableFilename.Equals("")))
                 {
                     List<string> POSTcmdExtensions = new List<string> {configFileFromPath["VPinballX.starter"][$"POSTcmdExtension.{parentProcessName}"],
@@ -617,7 +643,7 @@ Do you want to create this file now?";
 
             return false;
         }
-        void StartAnotherProgram(string programPath, string[] programArgs, bool addTracker = true)
+        void StartAnotherProgram(string programPath, string[] programArgs, bool addTracker = true, string? activateWindowTitle = null, int activateWindowTimeoutMs = 0)
         {
             using (Process process = new Process())
             {
@@ -642,19 +668,26 @@ Do you want to create this file now?";
                     process.WaitForInputIdle(10000);
                 }
 
-                // Try to activate the window with the title "Visual Pinball Player" if it is not minimized and set focus
-                IntPtr hWnd = IntPtr.Zero;
-                for (int i = 0; i < 20; i++)
+                // Try to activate the configured window title for up to the configured timeout
+                if (!string.IsNullOrWhiteSpace(activateWindowTitle) && activateWindowTimeoutMs > 0)
                 {
-                    hWnd = FindWindowByTitle(process.Id, "Visual Pinball Player");
-                    if (hWnd != IntPtr.Zero)
-                        break;
-                    Thread.Sleep(100);
-                }
-                if (hWnd != IntPtr.Zero && !Native.IsIconic(hWnd))
-                {
-                    Native.SetForegroundWindow(hWnd);
-                    Native.SetFocus(hWnd);
+                    IntPtr hWnd = IntPtr.Zero;
+                    DateTime deadline = DateTime.UtcNow.AddMilliseconds(activateWindowTimeoutMs);
+
+                    while (DateTime.UtcNow < deadline)
+                    {
+                        hWnd = FindWindowByTitle(process.Id, activateWindowTitle);
+                        if (hWnd != IntPtr.Zero)
+                        {
+                            if (!Native.IsIconic(hWnd))
+                            {
+                                Native.SetForegroundWindow(hWnd);
+                                Native.SetFocus(hWnd);
+                            }
+                            break;
+                        }
+                        Thread.Sleep(100);
+                    }
                 }
 
                 process.WaitForExit();

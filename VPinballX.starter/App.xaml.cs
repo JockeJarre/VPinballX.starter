@@ -250,12 +250,60 @@ namespace VPinballX.starter
         }
         private void Application_Startup(object sender, StartupEventArgs eventArgs)
         {
-            string strSettingsIniFilePath = Path.Combine(strExeFilePath, strIniConfigFilename);
             string parentProcessName = ParentProcessName();
 
             if (eventArgs.Args.Length > 0)
             {
                 mArgs.AddRange(eventArgs.Args);
+            }
+
+            // Extract table filename from args to determine INI location
+            string tableFilename = "";
+            foreach (string arg in mArgs)
+            {
+                if (arg.Trim('"').EndsWith(".vpx", StringComparison.OrdinalIgnoreCase))
+                {
+                    tableFilename = arg;
+                    break;
+                }
+            }
+
+            // Determine INI file path with fallback: prefer table directory, then exe directory
+            string strSettingsIniFilePath;
+            if (!tableFilename.Equals(""))
+            {
+                // We have a table file, try to find INI in same directory
+                char[] charsToTrim = { '-', '/', '"' };
+                string tablePathToCheck = tableFilename.Trim(charsToTrim);
+
+                // Make path absolute if needed
+                if (tablePathToCheck.Length < 2 || !tablePathToCheck.Substring(1).StartsWith(":"))
+                    tablePathToCheck = $"{Directory.GetCurrentDirectory()}\\{tablePathToCheck}";
+
+                string? tableDirectory = Path.GetDirectoryName(tablePathToCheck);
+                if (!string.IsNullOrEmpty(tableDirectory))
+                {
+                    string iniInTableDir = Path.Combine(tableDirectory, strIniConfigFilename);
+
+                    // Prefer INI in table directory, fall back to exe directory
+                    if (File.Exists(iniInTableDir))
+                    {
+                        strSettingsIniFilePath = iniInTableDir;
+                    }
+                    else
+                    {
+                        strSettingsIniFilePath = Path.Combine(strExeFilePath, strIniConfigFilename);
+                    }
+                }
+                else
+                {
+                    strSettingsIniFilePath = Path.Combine(strExeFilePath, strIniConfigFilename);
+                }
+            }
+            else
+            {
+                // No table provided, use exe directory
+                strSettingsIniFilePath = Path.Combine(strExeFilePath, strIniConfigFilename);
             }
 
             try
@@ -376,18 +424,7 @@ Do you want to create this file now?";
                     }
                 }
 
-                string tableFilename = "";
-
                 if (logVersions) LogToFile($"{parentProcessName} called VPinballX.starter with [{strExeFileName} " + String.Join(" ", mArgs.Select(s => s.Contains(" ") ? $"\"{s}\"" : s).ToList()) + "]");
-
-                foreach (string arg in mArgs)
-                {
-                    if (arg.Trim('"').EndsWith(".vpx", StringComparison.OrdinalIgnoreCase))
-                    {
-                        tableFilename = arg;
-                        break;
-                    }
-                }
                 List<string> argsWithTable = new List<string>();
                 string defaultFileVersion = configFileFromPath["VPinballX.starter"]["DefaultVersion"];
 

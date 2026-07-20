@@ -426,7 +426,7 @@ Do you want to create this file now?";
 
                 if (logVersions) LogToFile($"{parentProcessName} called VPinballX.starter with [{strExeFileName} " + String.Join(" ", mArgs.Select(s => s.Contains(" ") ? $"\"{s}\"" : s).ToList()) + "]");
                 List<string> argsWithTable = new List<string>();
-                string defaultFileVersion = configFileFromPath["VPinballX.starter"]["DefaultVersion"];
+                string defaultFileVersion = StripQuotes(configFileFromPath["VPinballX.starter"]["DefaultVersion"]);
 
                 if (object.Equals(defaultFileVersion, null))
                 {
@@ -489,7 +489,7 @@ Do you want to create this file now?";
                         }
                     }
                 }
-                string vpxCommand = configFileFromPath["VPinballX"][strFileVersion] ?? configFileFromPath["VPinballX"]["Default"];
+                string vpxCommand = StripQuotes(configFileFromPath["VPinballX"][strFileVersion] ?? configFileFromPath["VPinballX"]["Default"]);
 
                 if (object.Equals(vpxCommand, null))
                     throw new ArgumentException($"No\n\n[VPinballX]\n{strFileVersion}=VPinballXxx.exe\nor\n\n\n[VPinballX]\nDefault=VPinballXxx.exe\n\nfound in the ini! ({strSettingsIniFilePath})");
@@ -517,8 +517,8 @@ Do you want to create this file now?";
                         }
                         argsWithTable.AddRange(mArgs);
                     }
-                    List<string> PREcmdExtensions = new List<string> {configFileFromPath["VPinballX.starter"][$"PREcmdExtension.{parentProcessName}"],
-                                                 configFileFromPath["VPinballX.starter"]["PREcmdExtension"] ?? ".pre.cmd" };
+                    List<string> PREcmdExtensions = new List<string> {StripQuotes(configFileFromPath["VPinballX.starter"][$"PREcmdExtension.{parentProcessName}"]),
+                                                 StripQuotes(configFileFromPath["VPinballX.starter"]["PREcmdExtension"] ?? ".pre.cmd") };
 
                     StartPrePostCommands(PREcmdExtensions, strSettingsIniFilePath, argsWithTable);
                     StartPrePostCommands(PREcmdExtensions, tableFilename, argsWithTable);
@@ -530,7 +530,7 @@ Do you want to create this file now?";
                     {
                         if ( (key.Name.Contains(".") && mArgs.Contains(key.Name.Split(".").Last()) ) || ! key.Name.Contains("."))
                         {
-                            foreach (string parameter in configFileFromPath["VPinballX.starter"][key.Name].Split(" "))
+                            foreach (string parameter in StripQuotes(configFileFromPath["VPinballX.starter"][key.Name]).Split(" "))
                             {
                                 mArgs.Add(parameter);
                             }
@@ -542,7 +542,7 @@ Do you want to create this file now?";
                     {
                         if ( (key.Name.Contains(".") && tableFilename.Contains(key.Name.Split(".").Last()) ) || ! key.Name.Contains("."))
                         {
-                            string pathToAdd = configFileFromPath["VPinballX.starter"][key.Name];
+                            string pathToAdd = StripQuotes(configFileFromPath["VPinballX.starter"][key.Name]);
                             // Get the existing PATH
                             string existingPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process) ?? "";
 
@@ -573,8 +573,8 @@ Do you want to create this file now?";
                 StartAnotherProgram(vpxCommand, mArgs.ToArray(), true, activateWindowTitle, activateWindowTimeoutMs);
                 if (PREPOSTactive && (!tableFilename.Equals("")))
                 {
-                    List<string> POSTcmdExtensions = new List<string> {configFileFromPath["VPinballX.starter"][$"POSTcmdExtension.{parentProcessName}"],
-                                                 configFileFromPath["VPinballX.starter"]["POSTcmdExtension"] ?? ".post.cmd" };
+                    List<string> POSTcmdExtensions = new List<string> {StripQuotes(configFileFromPath["VPinballX.starter"][$"POSTcmdExtension.{parentProcessName}"]),
+                                                 StripQuotes(configFileFromPath["VPinballX.starter"]["POSTcmdExtension"] ?? ".post.cmd") };
 
                     StartPrePostCommands(POSTcmdExtensions, tableFilename, argsWithTable);
                     StartPrePostCommands(POSTcmdExtensions, strSettingsIniFilePath, argsWithTable);
@@ -622,6 +622,20 @@ Do you want to create this file now?";
         bool FileOrDirectoryExists(string name)
         {
             return Directory.Exists(name) || File.Exists(name);
+        }
+
+        string StripQuotes(string? value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return value ?? "";
+            
+            value = value.Trim();
+            if ((value.StartsWith("\"") && value.EndsWith("\"")) ||
+                (value.StartsWith("'") && value.EndsWith("'")))
+            {
+                return value.Substring(1, value.Length - 2);
+            }
+            return value;
         }
         string ParentProcessName()
         {

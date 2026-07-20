@@ -4,6 +4,7 @@ on:
 
 env:
   ACTIONS_RUNNER_DEBUG: true
+  NODE_VERSION: '24'
 
 defaults:
   run:

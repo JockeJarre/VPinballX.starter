@@ -9,6 +9,8 @@ Using a small ini file similar to this one:
 ;DefaultVersion when started without any table param.
 DefaultVersion=10.80
 LogVersions=1
+;Window activation ("title", timeout=timeout in seconds)
+ActivateWindow="Visual Pinball Player", timeout=10
 ;cmd files to run before and after a table has been started. Activate here:
 PREPOSTactive=false
 ;The first argument will become the table name, complete command line parameters follow

@@ -70,7 +70,7 @@ namespace VPinballX.starter
                 //  app.manifest change.
                 //  https://stackoverflow.com/a/4232259/386091
                 //  https://stackoverflow.com/a/9507862/386091
-                if (Environment.OSVersion.Version < new Version(6, 2))
+                if (Environment.OSVersion.Version < new System.Version(6, 2))
                     return;
 
                 // The job name is optional (and can be null) but it helps with diagnostics.
@@ -452,18 +452,12 @@ Do you want to create this file now?";
                     }
 
                     // Read the version of VPinballX.exe which saved this table
-                    var cf = new CompoundFile(tableFilename);
-                    try
-                    {
-                        var gameStorage = cf.RootStorage.GetStorage("GameStg");
-                        var gameData = gameStorage.GetStream("GameData");
-
-                        fileVersion = BitConverter.ToInt32(gameStorage.GetStream("Version").GetData(), 0);
-                    }
-                    finally
-                    {
-                        cf.Close();
-                    }
+                    using var cf = RootStorage.OpenRead(tableFilename);
+                    var gameStorage = cf.OpenStorage("GameStg");
+                    using var versionStream = gameStorage.OpenStream("Version");
+                    byte[] versionBytes = new byte[4];
+                    versionStream.Read(versionBytes, 0, 4);
+                    fileVersion = BitConverter.ToInt32(versionBytes, 0);
                 }
                 string strFileVersion = $"{fileVersion / 100}.{fileVersion % 100}";
                 if (configFileFromPath["VPinballX"][strFileVersion] == null)

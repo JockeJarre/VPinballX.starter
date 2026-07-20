@@ -9,6 +9,7 @@ on:
 env:
   ACTIONS_API_URL: https://api.github.com/repos/${GITHUB_REPOSITORY}/actions
   NODE_VERSION: '24'
+  NODE_NO_WARNINGS: 1
 jobs:
   version:
     runs-on: ubuntu-latest
@@ -53,7 +54,7 @@ jobs:
            done
            rm *.json
       - id: create_release
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@v2
         with:
           prerelease: true
           name: "VPinballX.starter-${{ needs.version.outputs.tag }}"

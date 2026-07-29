@@ -327,6 +327,14 @@ FirstArgTableName=true
 PREcmdExtension=.pre.cmd
 POSTcmdExtension=.post.cmd
 
+;ActivateConfig allows you to switch to a different ini file when setting the state of the NumLock and ScrollLock keys before starting VPinballX.exe.
+#ActivateConfig.NumLock=VpinballX.starter.NumLock.ini
+#ActivateConfig.ScrollLock=VPinballX.starter.ScrollLock.ini
+
+;ActivateSetting allows you to switch to different setting modifiers within the same base ini file. See the [TableNameExceptions.NumLockVR] section below for an example.
+#ActivateSetting.NumLock=NumLockVR
+#ActivateSetting.ScrollLock=ScrollLock
+
 ;you can have different settings depending on the caller:
 ;First VPinballX.starter.preexplorer.cmd then VPinballX.starter.pre.cmd
 #PREcmdExtension.explorer=.preexplorer.cmd
@@ -340,6 +348,9 @@ POSTcmdExtension=.post.cmd
 #AddParameter=-Primary
 #AddParameter.-play=-Minimized
 
+[TableNameExceptions.NumLockVR]
+Table Name=x64
+
 [TableNameExceptions]
 ;If left string is found in the Table filename
 ;we will use the right string to add to the version number search
@@ -350,6 +361,9 @@ GL=GL
 ;Revert to older VPX 7.4 for certain tables
 X74=.RevertX7
 Old table=.RevertX7
+
+[VPinballX.NumLockVR]
+Default=VPinballX85_VR.exe
 
 [VPinballX]
 ;Default value used when not found in the table below.

@@ -296,7 +296,7 @@ namespace VPinballX.starter
             }
 
             // Determine INI file path with fallback: prefer table directory, then exe directory
-            string strSettingsIniFilePath;
+            string strSettingsIniFilePath = Path.Combine(strExeFilePath, strIniConfigFilename);
             if (!tableFilename.Equals(""))
             {
                 // We have a table file, try to find INI in same directory
@@ -317,20 +317,7 @@ namespace VPinballX.starter
                     {
                         strSettingsIniFilePath = iniInTableDir;
                     }
-                    else
-                    {
-                        strSettingsIniFilePath = Path.Combine(strExeFilePath, strIniConfigFilename);
-                    }
                 }
-                else
-                {
-                    strSettingsIniFilePath = Path.Combine(strExeFilePath, strIniConfigFilename);
-                }
-            }
-            else
-            {
-                // No table provided, use exe directory
-                strSettingsIniFilePath = Path.Combine(strExeFilePath, strIniConfigFilename);
             }
 
             // Check for ActivateConfig entries and load alternative config if needed
@@ -381,19 +368,14 @@ FirstArgTableName=true
 ;The filename extension for VPinballX.starter.pre.cmd and tablename.pre.cmd
 PREcmdExtension=.pre.cmd
 POSTcmdExtension=.post.cmd
-
-;ActivateConfig allows you to switch to a different ini file when setting the state of the NumLock and ScrollLock keys before starting VPinballX.exe.
-#ActivateConfig.NumLock=VpinballX.starter.NumLock.ini
-#ActivateConfig.ScrollLock=VPinballX.starter.ScrollLock.ini
-
-;ActivateSetting allows you to switch to different setting modifiers within the same base ini file. See the [TableNameExceptions.NumLockVR] section below for an example.
-#ActivateSetting.NumLock=NumLockVR
-#ActivateSetting.ScrollLock=ScrollLock
-
 ;you can have different settings depending on the caller:
 ;First VPinballX.starter.preexplorer.cmd then VPinballX.starter.pre.cmd
 #PREcmdExtension.explorer=.preexplorer.cmd
 #POSTcmdExtension.explorer=.postexplorer.cmd
+
+;ActivateConfig allows you to switch to a different ini file when setting the state of the NumLock and ScrollLock keys before starting VPinballX.exe.
+#ActivateConfig.NumLock=VpinballX.starter.NumLock.ini
+#ActivateConfig.ScrollLock=VPinballX.starter.ScrollLock.ini
 
 ; If the parent process cannot be found (Pinup popper show up as 'anonymous')
 #PREcmdExtension.anonymous=.preanon.cmd
@@ -402,6 +384,10 @@ POSTcmdExtension=.post.cmd
 ; Add parameters to the command line
 #AddParameter=-Primary
 #AddParameter.-play=-Minimized
+
+[VPinballX.starter.10.81]
+;AddParameter can be added to a version specific section
+#AddParameter=-First
 
 [TableNameExceptions.NumLockVR]
 Table Name=x64
@@ -416,9 +402,6 @@ GL=GL
 ;Revert to older VPX 7.4 for certain tables
 X74=.RevertX7
 Old table=.RevertX7
-
-[VPinballX.NumLockVR]
-Default=VPinballX85_VR.exe
 
 [VPinballX]
 ;Default value used when not found in the table below.
@@ -606,43 +589,46 @@ Do you want to create this file now?";
                     StartPrePostCommands(PREcmdExtensions, tableFilename, argsWithTable);
                 }
 
-                foreach (var key in configFileFromPath["VPinballX.starter"].Keys)
+                ConfigSection configSection = configFileFromPath[$"VPinballX.starter.{strFileVersion}"]??configFileFromPath["VPinballX.starter"];
+                if (configSection != null)
                 {
-                    if (key?.Name.StartsWith("AddParameter") == true)
+                    foreach (var key in configSection.Keys)
                     {
-                        if ( (key.Name.Contains(".") && mArgs.Contains(key.Name.Split(".").Last()) ) || ! key.Name.Contains("."))
+                        if (key.Name.StartsWith("AddParameter"))
                         {
-                            foreach (string parameter in StripQuotes(configFileFromPath["VPinballX.starter"][key.Name]).Split(" "))
+                            if ( (key.Name.Contains(".") && mArgs.Contains(key.Name.Split(".").Last()) ) || ! key.Name.Contains("."))
                             {
-                                mArgs.Add(parameter);
+                                foreach (string parameter in StripQuotes(configSection[key.Name]).Split(" "))
+                                {
+                                    mArgs.Add(parameter);
+                                }
+                                LogToFile($"Amend \"{key.Name}\" setting to the call parameters: {String.Join(" ", mArgs)}");
                             }
-                            LogToFile($"Amend \"{key.Name}\" setting to the call parameters: {String.Join(" ", mArgs)}");
                         }
-                    }
 
-                    if (key?.Name.StartsWith("AddPATH") == true)
-                    {
-                        if ( (key.Name.Contains(".") && tableFilename.Contains(key.Name.Split(".").Last()) ) || ! key.Name.Contains("."))
+                        else if (key.Name.StartsWith("AddPATH"))
                         {
-                            string pathToAdd = StripQuotes(configFileFromPath["VPinballX.starter"][key.Name]);
-                            // Get the existing PATH
-                            string existingPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process) ?? "";
-
-                            if (existingPath.Contains(pathToAdd))
+                            if ( (key.Name.Contains(".") && tableFilename.Contains(key.Name.Split(".").Last()) ) || ! key.Name.Contains("."))
                             {
-                                LogToFile($"PATH setting already contains: {pathToAdd} ");
-                                continue;
-                            }
-                            // Append your new entries (avoid duplicates if needed)
-                            string updatedPath = pathToAdd + ";" + existingPath;
+                                string pathToAdd = StripQuotes(configSection[key.Name]);
+                                // Get the existing PATH
+                                string existingPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process) ?? "";
 
-                            // Set the PATH for the process scope
-                            Environment.SetEnvironmentVariable("PATH", updatedPath, EnvironmentVariableTarget.Process);
-                            LogToFile($"Amended the PATH setting: {pathToAdd} ");
+                                if (existingPath.Contains(pathToAdd))
+                                {
+                                    LogToFile($"PATH setting already contains: {pathToAdd} ");
+                                    continue;
+                                }
+                                // Append your new entries (avoid duplicates if needed)
+                                string updatedPath = pathToAdd + ";" + existingPath;
+
+                                // Set the PATH for the process scope
+                                Environment.SetEnvironmentVariable("PATH", updatedPath, EnvironmentVariableTarget.Process);
+                                LogToFile($"Amended the PATH setting: {pathToAdd} ");
+                            }
                         }
                     }
                 }
-
 
                 if (IsVPinballProcessRunning(vpxCommand))
                 {

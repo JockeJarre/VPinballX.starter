@@ -25,6 +25,7 @@ using Salaros.Configuration;
 using System.ComponentModel;
 using System.Xml.Linq;
 using System.Threading;
+using System.Windows.Forms;
 
 
 namespace VPinballX.starter
@@ -247,6 +248,9 @@ namespace VPinballX.starter
 
             [DllImport("user32.dll")]
             public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+            [DllImport("user32.dll")]
+            public static extern short GetAsyncKeyState(int vKey);
         }
         private void Application_Startup(object sender, StartupEventArgs eventArgs)
         {
@@ -255,6 +259,29 @@ namespace VPinballX.starter
             if (eventArgs.Args.Length > 0)
             {
                 mArgs.AddRange(eventArgs.Args);
+            }
+
+            // Check keyboard state for ActivateConfig and ActivateSetting
+            string activateConfigNumLock = "";
+            string activateConfigScrollLock = "";
+            string activateSettingNumLock = "";
+            string activateSettingScrollLock = "";
+            
+            // Check if NumLock or ScrollLock keys are currently pressed
+            bool numLockPressed = (Native.GetAsyncKeyState(0x90) & 0x8000) != 0;
+            bool scrollLockPressed = (Native.GetAsyncKeyState(0x91) & 0x8000) != 0;
+            
+            // If keys are pressed, check for corresponding ActivateConfig and ActivateSetting entries
+            if (numLockPressed)
+            {
+                activateConfigNumLock = "ActivateConfig.NumLock";
+                activateSettingNumLock = "ActivateSetting.NumLock";
+            }
+            
+            if (scrollLockPressed)
+            {
+                activateConfigScrollLock = "ActivateConfig.ScrollLock";
+                activateSettingScrollLock = "ActivateSetting.ScrollLock";
             }
 
             // Extract table filename from args to determine INI location
@@ -304,6 +331,34 @@ namespace VPinballX.starter
             {
                 // No table provided, use exe directory
                 strSettingsIniFilePath = Path.Combine(strExeFilePath, strIniConfigFilename);
+            }
+
+            // Check for ActivateConfig entries and load alternative config if needed
+            if (!string.IsNullOrEmpty(activateConfigNumLock) || !string.IsNullOrEmpty(activateConfigScrollLock))
+            {
+                // Load the config file to check for ActivateConfig entries
+                var tempConfigFile = new ConfigParser(strSettingsIniFilePath);
+                
+                // Check for ActivateConfig.NumLock or ActivateConfig.ScrollLock
+                string activateConfigFile = "";
+                if (!string.IsNullOrEmpty(activateConfigNumLock) && tempConfigFile["VPinballX.starter"] != null)
+                {
+                    activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigNumLock] ?? "";
+                }
+                if (string.IsNullOrEmpty(activateConfigFile) && !string.IsNullOrEmpty(activateConfigScrollLock) && tempConfigFile["VPinballX.starter"] != null)
+                {
+                    activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigScrollLock] ?? "";
+                }
+                
+                // If we found an ActivateConfig file, use it instead
+                if (!string.IsNullOrEmpty(activateConfigFile))
+                {
+                    string configPath = Path.Combine(strExeFilePath, activateConfigFile);
+                    if (File.Exists(configPath))
+                    {
+                        strSettingsIniFilePath = configPath;
+                    }
+                }
             }
 
             try
@@ -412,6 +467,25 @@ Do you want to create this file now?";
                 string[] AllTrue = new string[] { "true", "1", "yes" };
 
                 var configFileFromPath = new ConfigParser(strSettingsIniFilePath);
+                
+                // Check for ActivateSetting entries and modify the configuration if needed
+                string activateSettingValue = "";
+                if (!string.IsNullOrEmpty(activateSettingNumLock) || !string.IsNullOrEmpty(activateSettingScrollLock))
+                {
+                    // Check if we have ActivateSetting entries in the config
+                    if (configFileFromPath["VPinballX.starter"] != null)
+                    {
+                        if (!string.IsNullOrEmpty(activateSettingNumLock) && configFileFromPath["VPinballX.starter"][activateSettingNumLock] != null)
+                        {
+                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingNumLock];
+                        }
+                        else if (!string.IsNullOrEmpty(activateSettingScrollLock) && configFileFromPath["VPinballX.starter"][activateSettingScrollLock] != null)
+                        {
+                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingScrollLock];
+                        }
+                    }
+                }
+                
                 bool logVersions = AllTrue.Any((configFileFromPath["VPinballX.starter"]["LogVersions"] ?? "false").Trim().ToLower().Contains);
 
                 // Window activation defaults

@@ -70,8 +70,10 @@ dotnet run --project VPinballX.starter
 
 ### Build Validation
 1. **Always** clean before major changes: `dotnet clean`
-2. **Always** build after code changes: `dotnet build`
-3. **Always** test publish process before releases: `dotnet publish` command above
+2. **Always** build after code changes: `dotnet build --configuration Release`
+3. **Always** verify the Release executable exists: `VPinballX.starter\bin\Release\net8.0-windows\VPinballX.starter.exe`
+4. **Always** test the publish process before releases: `dotnet publish` command above
+5. **Always** verify the published executable exists: `VPinballX.starter\bin\Release\net8.0-windows\win-x64\publish\VPinballX.starter.exe`
 4. Build artifacts are automatically generated in `bin/` and `obj/` folders
 5. No explicit test suite exists - validation is manual through application execution
 

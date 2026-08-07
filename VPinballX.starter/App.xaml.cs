@@ -25,6 +25,7 @@ using Salaros.Configuration;
 using System.ComponentModel;
 using System.Xml.Linq;
 using System.Threading;
+using System.Windows.Controls;
 
 
 namespace VPinballX.starter
@@ -36,7 +37,7 @@ namespace VPinballX.starter
     {
         public List<string> mArgs = new List<string>();
         public static string strExeFilePath = AppDomain.CurrentDomain.BaseDirectory;
-        public static string strExeFileName = AppDomain.CurrentDomain.FriendlyName;
+        public static string strExeFileName = AppDomain.CurrentDomain.FriendlyName + ".exe";
         public static string strIniConfigFilename = "VPinballX.starter.ini";
         public static string strLogFilename = Path.Combine(App.strExeFilePath, "VPinballX.starter.log");
 
@@ -70,7 +71,7 @@ namespace VPinballX.starter
                 //  app.manifest change.
                 //  https://stackoverflow.com/a/4232259/386091
                 //  https://stackoverflow.com/a/9507862/386091
-                if (Environment.OSVersion.Version < new Version(6, 2))
+                if (Environment.OSVersion.Version < new System.Version(6, 2))
                     return;
 
                 // The job name is optional (and can be null) but it helps with diagnostics.
@@ -247,6 +248,20 @@ namespace VPinballX.starter
 
             [DllImport("user32.dll")]
             public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+            [DllImport("user32.dll")]
+            public static extern short GetAsyncKeyState(int vKey);
+
+            [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+            public static extern uint ExtractIconEx(
+                string szFileName,
+                int nIconIndex,
+                IntPtr[]? phiconLarge,
+                IntPtr[]? phiconSmall,
+                uint nIcons);
+
+            [DllImport("user32.dll", SetLastError = true)]
+            public static extern bool DestroyIcon(IntPtr hIcon);
         }
         private void Application_Startup(object sender, StartupEventArgs eventArgs)
         {
@@ -255,6 +270,29 @@ namespace VPinballX.starter
             if (eventArgs.Args.Length > 0)
             {
                 mArgs.AddRange(eventArgs.Args);
+            }
+
+            // Check keyboard state for ActivateConfig and ActivateSetting
+            string activateConfigNumLock = "";
+            string activateConfigScrollLock = "";
+            string activateSettingNumLock = "";
+            string activateSettingScrollLock = "";
+            
+            // Check if NumLock or ScrollLock keys are currently pressed
+            bool numLockPressed = (Native.GetAsyncKeyState(0x90) & 0x8000) != 0;
+            bool scrollLockPressed = (Native.GetAsyncKeyState(0x91) & 0x8000) != 0;
+            
+            // If keys are pressed, check for corresponding ActivateConfig and ActivateSetting entries
+            if (numLockPressed)
+            {
+                activateConfigNumLock = "ActivateConfig.NumLock";
+                activateSettingNumLock = "ActivateSetting.NumLock";
+            }
+            
+            if (scrollLockPressed)
+            {
+                activateConfigScrollLock = "ActivateConfig.ScrollLock";
+                activateSettingScrollLock = "ActivateSetting.ScrollLock";
             }
 
             // Extract table filename from args to determine INI location
@@ -269,7 +307,7 @@ namespace VPinballX.starter
             }
 
             // Determine INI file path with fallback: prefer table directory, then exe directory
-            string strSettingsIniFilePath;
+            string strSettingsIniFilePath = Path.Combine(strExeFilePath, strIniConfigFilename);
             if (!tableFilename.Equals(""))
             {
                 // We have a table file, try to find INI in same directory
@@ -290,20 +328,35 @@ namespace VPinballX.starter
                     {
                         strSettingsIniFilePath = iniInTableDir;
                     }
-                    else
-                    {
-                        strSettingsIniFilePath = Path.Combine(strExeFilePath, strIniConfigFilename);
-                    }
-                }
-                else
-                {
-                    strSettingsIniFilePath = Path.Combine(strExeFilePath, strIniConfigFilename);
                 }
             }
-            else
+
+            // Check for ActivateConfig entries and load alternative config if needed
+            if (!string.IsNullOrEmpty(activateConfigNumLock) || !string.IsNullOrEmpty(activateConfigScrollLock))
             {
-                // No table provided, use exe directory
-                strSettingsIniFilePath = Path.Combine(strExeFilePath, strIniConfigFilename);
+                // Load the config file to check for ActivateConfig entries
+                var tempConfigFile = new ConfigParser(strSettingsIniFilePath);
+                
+                // Check for ActivateConfig.NumLock or ActivateConfig.ScrollLock
+                string activateConfigFile = "";
+                if (!string.IsNullOrEmpty(activateConfigNumLock) && tempConfigFile["VPinballX.starter"] != null)
+                {
+                    activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigNumLock] ?? "";
+                }
+                if (string.IsNullOrEmpty(activateConfigFile) && !string.IsNullOrEmpty(activateConfigScrollLock) && tempConfigFile["VPinballX.starter"] != null)
+                {
+                    activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigScrollLock] ?? "";
+                }
+                
+                // If we found an ActivateConfig file, use it instead
+                if (!string.IsNullOrEmpty(activateConfigFile))
+                {
+                    string configPath = Path.Combine(strExeFilePath, activateConfigFile);
+                    if (File.Exists(configPath))
+                    {
+                        strSettingsIniFilePath = configPath;
+                    }
+                }
             }
 
             try
@@ -314,15 +367,20 @@ namespace VPinballX.starter
                     const string strDefaultIniConfig =
             @";A Configuration file for VPinballX.starter
 [VPinballX.starter]
+;ActivateConfig allows you to switch to a different ini file when setting the state of the NumLock and ScrollLock keys before starting.
+#ActivateConfig.NumLock=VpinballX.starter.NumLock.ini
+#ActivateConfig.ScrollLock=VPinballX.starter.ScrollLock.ini
+
 ;DefaultVersion when started without any table param.
 DefaultVersion=10.80
 LogVersions=true
+
 ;Window activation (title, timeout in seconds)
 ActivateWindow=""Visual Pinball Player"", timeout=10
+
 ;cmd files to run before and after a table has been started. Activate here:
 PREPOSTactive=false
-;The first argument will become the table name, complete command line parameters follow
-FirstArgTableName=true
+
 ;The filename extension for VPinballX.starter.pre.cmd and tablename.pre.cmd
 PREcmdExtension=.pre.cmd
 POSTcmdExtension=.post.cmd
@@ -336,13 +394,27 @@ POSTcmdExtension=.post.cmd
 #PREcmdExtension.anonymous=.preanon.cmd
 #POSTcmdExtension.anonymous=.preanon.cmd
 
+;The first argument will become the table name, complete command line parameters follow
+FirstArgTableName=true
+
 ; Add parameters to the command line
 #AddParameter=-Primary
+; Add parameter only when '-play' is already in the command line parameters
 #AddParameter.-play=-Minimized
 
+[VPinballX.starter[10.81]]
+;                  ^^^^^ This is the version of the selected VPinballX.exe, not the version the table was created with!
+;AddParameter can be added to a version specific section
+#AddParameter=-First
+
+;AddPath can be added to a version specific section, the PATH is amended with the value.
+#AddPath=C:\Program Files\VPinballX\VPinballX85\
+
+[TableNameExceptions.NumLockVR]
+Table Name=x64
+
 [TableNameExceptions]
-;If left string is found in the Table filename
-;we will use the right string to add to the version number search
+;If left string is found in the Table filename we will use the right string to add to the version number search
 Table Name=x32
 Another Table=GL
 x32=x32
@@ -355,33 +427,18 @@ Old table=.RevertX7
 ;Default value used when not found in the table below.
 Default=VPinballX85.exe
 Default.RevertX7=VPinballX74.exe
+
 ;File versions converted to the right VPinballXxx.exe
-10.72=VPinballX74.exe
+;10.72=VPinballX74.exe
+;^^^^^ This is the version the table was created with and loaded from the .vpx file, not the version of the selected VPinballX.exe!
 10.80=VPinballX85.exe
 10.80x32=VPinballX85x32.exe
-10.80GL=VPinballX85_GL.exe";
+10.80GL=VPinballX85_GL.exe
+";
 
-                    string strWelcomeString =
-            $@"Welcome new VPinballX.starter user!
-
-We could not find a ""{strIniConfigFilename}"" next to ""{strExeFileName}"". 
-
-The file should look like this:
-X-----X-----X-----X----X-----X-----X-----X-----X
-{strDefaultIniConfig}
-X-----X-----X-----X----X-----X-----X-----X-----X
-
-VPinballX.starter can therefore be used as a VPinballX.exe replacement.
-
-It works like this:
-
-VPinballX.starter is started with exactly the same parameters as VPinballX.exe. First it loads the table file and finds out what version it was saved with. Then it takes that information and looks in the [VPinballX] table above to find out which version of VPinballX.xxx.exe you want to start with. It will then run the VPinballX.xxx.exe that you have configured using exactly the same parameters.
-If it cannot find a version in the table the default entry under [VPinballX] will be used. If you simply double-click the VPinballX.starter without any table, the Default under [VPinballx.starter] is used.
-This way the correct table version or the version you have chosen will always be used. Each time you start VPinballX, a log entry will be added to VPinballX.starter.log, telling which version was used. This can be turned of in the ini file.
-
-Do you want to create this file now?";
-                    int dialogResult = Native.MessageBoxW(IntPtr.Zero, strWelcomeString, $"{strExeFileName}: Welcome", Native.MB_YESNO);
-                    if (dialogResult == Native.IDYES)
+                        string strWelcomeString = BuildWelcomeDialogRtf(strIniConfigFilename, strExeFileName, strDefaultIniConfig);
+                        bool createConfigFile = ShowScrollableYesNoDialog(strWelcomeString, true, "Do you want to create this file now?");
+                    if (createConfigFile)
                     {
                         using (StreamWriter sw = File.CreateText(strSettingsIniFilePath))
                         {
@@ -398,6 +455,25 @@ Do you want to create this file now?";
                 string[] AllTrue = new string[] { "true", "1", "yes" };
 
                 var configFileFromPath = new ConfigParser(strSettingsIniFilePath);
+                
+                // Check for ActivateSetting entries and modify the configuration if needed
+                string activateSettingValue = "";
+                if (!string.IsNullOrEmpty(activateSettingNumLock) || !string.IsNullOrEmpty(activateSettingScrollLock))
+                {
+                    // Check if we have ActivateSetting entries in the config
+                    if (configFileFromPath["VPinballX.starter"] != null)
+                    {
+                        if (!string.IsNullOrEmpty(activateSettingNumLock) && configFileFromPath["VPinballX.starter"][activateSettingNumLock] != null)
+                        {
+                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingNumLock];
+                        }
+                        else if (!string.IsNullOrEmpty(activateSettingScrollLock) && configFileFromPath["VPinballX.starter"][activateSettingScrollLock] != null)
+                        {
+                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingScrollLock];
+                        }
+                    }
+                }
+                
                 bool logVersions = AllTrue.Any((configFileFromPath["VPinballX.starter"]["LogVersions"] ?? "false").Trim().ToLower().Contains);
 
                 // Window activation defaults
@@ -452,18 +528,12 @@ Do you want to create this file now?";
                     }
 
                     // Read the version of VPinballX.exe which saved this table
-                    var cf = new CompoundFile(tableFilename);
-                    try
-                    {
-                        var gameStorage = cf.RootStorage.GetStorage("GameStg");
-                        var gameData = gameStorage.GetStream("GameData");
-
-                        fileVersion = BitConverter.ToInt32(gameStorage.GetStream("Version").GetData(), 0);
-                    }
-                    finally
-                    {
-                        cf.Close();
-                    }
+                    using var cf = RootStorage.OpenRead(tableFilename);
+                    var gameStorage = cf.OpenStorage("GameStg");
+                    using var versionStream = gameStorage.OpenStream("Version");
+                    byte[] versionBytes = new byte[4];
+                    versionStream.Read(versionBytes, 0, 4);
+                    fileVersion = BitConverter.ToInt32(versionBytes, 0);
                 }
                 string strFileVersion = $"{fileVersion / 100}.{fileVersion % 100}";
                 if (configFileFromPath["VPinballX"][strFileVersion] == null)
@@ -523,44 +593,77 @@ Do you want to create this file now?";
                     StartPrePostCommands(PREcmdExtensions, strSettingsIniFilePath, argsWithTable);
                     StartPrePostCommands(PREcmdExtensions, tableFilename, argsWithTable);
                 }
+                const string fallbackLauncherVersion = "99.9.9";
+                string launcherFileVersion = fallbackLauncherVersion;
 
-                foreach (var key in configFileFromPath["VPinballX.starter"].Keys)
+                try
                 {
-                    if (key?.Name.StartsWith("AddParameter") == true)
+                    if (!string.IsNullOrWhiteSpace(vpxCommand) && File.Exists(vpxCommand))
                     {
-                        if ( (key.Name.Contains(".") && mArgs.Contains(key.Name.Split(".").Last()) ) || ! key.Name.Contains("."))
+                        FileVersionInfo vpxVersionInfo = FileVersionInfo.GetVersionInfo(vpxCommand);
+
+                        if (vpxVersionInfo.FileMajorPart >= 0 && vpxVersionInfo.FileMinorPart >= 0)
                         {
-                            foreach (string parameter in StripQuotes(configFileFromPath["VPinballX.starter"][key.Name]).Split(" "))
-                            {
-                                mArgs.Add(parameter);
-                            }
-                            LogToFile($"Amend \"{key.Name}\" setting to the call parameters: {String.Join(" ", mArgs)}");
-                        }
-                    }
-
-                    if (key?.Name.StartsWith("AddPATH") == true)
-                    {
-                        if ( (key.Name.Contains(".") && tableFilename.Contains(key.Name.Split(".").Last()) ) || ! key.Name.Contains("."))
-                        {
-                            string pathToAdd = StripQuotes(configFileFromPath["VPinballX.starter"][key.Name]);
-                            // Get the existing PATH
-                            string existingPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process) ?? "";
-
-                            if (existingPath.Contains(pathToAdd))
-                            {
-                                LogToFile($"PATH setting already contains: {pathToAdd} ");
-                                continue;
-                            }
-                            // Append your new entries (avoid duplicates if needed)
-                            string updatedPath = pathToAdd + ";" + existingPath;
-
-                            // Set the PATH for the process scope
-                            Environment.SetEnvironmentVariable("PATH", updatedPath, EnvironmentVariableTarget.Process);
-                            LogToFile($"Amended the PATH setting: {pathToAdd} ");
+                            int buildPart = vpxVersionInfo.FileBuildPart >= 0 ? vpxVersionInfo.FileBuildPart : 0;
+                            launcherFileVersion = $"{vpxVersionInfo.FileMajorPart}.{vpxVersionInfo.FileMinorPart}.{buildPart}";
                         }
                     }
                 }
+                catch (Exception e)
+                {
+                    LogToFile($"Could not read file version from \"{vpxCommand}\": {e.Message}. Using fallback {fallbackLauncherVersion}.");
+                }
 
+                ConfigSection configSection = configFileFromPath[$"VPinballX.starter[{launcherFileVersion}]"]??configFileFromPath["VPinballX.starter"];
+                if (configSection != null)
+                {
+                    foreach (var key in configSection.Keys)
+                    {
+                        if (key.Name.StartsWith("AddParameter"))
+                        {
+                            if ( (key.Name.Contains(".") && mArgs.Contains(key.Name.Split(".").Last()) ) || ! key.Name.Contains("."))
+                            {
+                                foreach (string parameter in StripQuotes(configSection[key.Name]).Split(" "))
+                                {
+                                    mArgs.Add(parameter);
+                                }
+                                LogToFile($"Amend \"{key.Name}\" setting to the call parameters: {String.Join(" ", mArgs)}");
+                            }
+                        }
+
+                        else if (key.Name.StartsWith("AddPATH"))
+                        {
+                            if ( (key.Name.Contains(".") && tableFilename.Contains(key.Name.Split(".").Last()) ) || ! key.Name.Contains("."))
+                            {
+                                string pathToAdd = StripQuotes(configSection[key.Name]);
+                                foreach (string pathEntry in pathToAdd.Split(';', StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    string trimmedPathEntry = pathEntry.Trim();
+
+                                    if (string.IsNullOrEmpty(trimmedPathEntry))
+                                        continue;
+
+                                    // Get the existing PATH
+                                    string existingPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process) ?? "";
+
+                                    if (existingPath.Split(';', StringSplitOptions.RemoveEmptyEntries)
+                                        .Any(existingEntry => existingEntry.Trim().Equals(trimmedPathEntry, StringComparison.OrdinalIgnoreCase)))
+                                    {
+                                        LogToFile($"PATH setting already contains: {trimmedPathEntry} ");
+                                        continue;
+                                    }
+
+                                    // Append your new entries (avoid duplicates if needed)
+                                    string updatedPath = trimmedPathEntry + ";" + existingPath;
+
+                                    // Set the PATH for the process scope
+                                    Environment.SetEnvironmentVariable("PATH", updatedPath, EnvironmentVariableTarget.Process);
+                                    LogToFile($"Amended the PATH setting: {trimmedPathEntry} ");
+                                }
+                            }
+                        }
+                    }
+                }
 
                 if (IsVPinballProcessRunning(vpxCommand))
                 {
@@ -617,6 +720,316 @@ Do you want to create this file now?";
         {
             using (var sw = File.AppendText(strLogFilename))
                 sw.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " " + logText);
+        }
+
+        bool ShowScrollableYesNoDialog(string message, bool messageIsRtf = false, string footerPrompt = "")
+        {
+            System.Windows.Media.ImageSource? dialogIcon = null;
+            string iconPath = Path.Combine(strExeFilePath, "VPinballX.starter.ico");
+            if (File.Exists(iconPath))
+            {
+                try
+                {
+                    dialogIcon = new System.Windows.Media.Imaging.BitmapImage(new Uri(iconPath, UriKind.Absolute));
+                }
+                catch
+                {
+                    // Ignore icon loading issues and continue without a custom icon.
+                }
+            }
+
+            if (dialogIcon == null)
+            {
+                try
+                {
+                    string? exePath = Process.GetCurrentProcess().MainModule?.FileName;
+                    if (!string.IsNullOrWhiteSpace(exePath))
+                    {
+                        IntPtr[] largeIcons = new IntPtr[1];
+                        uint extracted = Native.ExtractIconEx(exePath, 0, largeIcons, null, 1);
+                        if (extracted > 0 && largeIcons[0] != IntPtr.Zero)
+                        {
+                            dialogIcon = System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(
+                                largeIcons[0],
+                                Int32Rect.Empty,
+                                System.Windows.Media.Imaging.BitmapSizeOptions.FromWidthAndHeight(64, 64));
+
+                            Native.DestroyIcon(largeIcons[0]);
+                        }
+                    }
+                }
+                catch
+                {
+                    // Keep dialog functional even when icon extraction fails.
+                }
+            }
+
+            var dialog = new Window
+            {
+                Title = BuildWindowTitleText(),
+                Icon = dialogIcon,
+                Width = 800,
+                Height = 520,
+                MinWidth = 640,
+                MinHeight = 420,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                ResizeMode = ResizeMode.CanResize,
+                ShowInTaskbar = true,
+                Topmost = true,
+                WindowStyle = WindowStyle.SingleBorderWindow,
+                Background = System.Windows.Media.Brushes.White,
+                FontFamily = new System.Windows.Media.FontFamily("Segoe UI")
+            };
+
+            dialog.Loaded += (_, __) =>
+            {
+                dialog.Activate();
+                dialog.Focus();
+                dialog.Topmost = false;
+            };
+
+            var root = new System.Windows.Controls.Grid
+            {
+                Margin = new Thickness(16)
+            };
+
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            var dialogHeader = new System.Windows.Controls.Grid
+            {
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            dialogHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            dialogHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            if (dialogIcon != null)
+            {
+                var headerIcon = new System.Windows.Controls.Image
+                {
+                    Source = dialogIcon,
+                    Width = 44,
+                    Height = 44,
+                    Margin = new Thickness(0, 0, 12, 0),
+                    VerticalAlignment = VerticalAlignment.Top
+                };
+                System.Windows.Controls.Grid.SetColumn(headerIcon, 0);
+                dialogHeader.Children.Add(headerIcon);
+            }
+
+            var headerText = new TextBlock
+            {
+                Text = BuildDialogHeaderText(),
+                FontSize = 20,
+                FontWeight = FontWeights.Bold,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            System.Windows.Controls.Grid.SetColumn(headerText, 1);
+            dialogHeader.Children.Add(headerText);
+
+            System.Windows.Controls.Grid.SetRow(dialogHeader, 0);
+            root.Children.Add(dialogHeader);
+
+            var flowDocument = new System.Windows.Documents.FlowDocument
+            {
+                FontFamily = new System.Windows.Media.FontFamily("Segoe UI"),
+                FontSize = 13,
+                PagePadding = new Thickness(0),
+                TextAlignment = TextAlignment.Left
+            };
+
+            if (messageIsRtf)
+            {
+                if (!TryLoadRtfIntoFlowDocument(flowDocument, message))
+                {
+                    flowDocument.Blocks.Add(new System.Windows.Documents.Paragraph(
+                        new System.Windows.Documents.Run(message))
+                    {
+                        Margin = new Thickness(0)
+                    });
+                }
+            }
+            else
+            {
+                flowDocument.Blocks.Add(new System.Windows.Documents.Paragraph(
+                    new System.Windows.Documents.Run(message))
+                {
+                    Margin = new Thickness(0)
+                });
+            }
+
+            var flowDocumentViewer = new FlowDocumentScrollViewer
+            {
+                Document = flowDocument,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                IsToolBarVisible = false,
+                Margin = new Thickness(0, 0, 0, 16)
+            };
+
+            System.Windows.Controls.Grid.SetRow(flowDocumentViewer, 1);
+            root.Children.Add(flowDocumentViewer);
+
+            var buttonPanel = new System.Windows.Controls.StackPanel
+            {
+                Orientation = System.Windows.Controls.Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+
+            var yesButton = new System.Windows.Controls.Button
+            {
+                Content = "Yes",
+                MinWidth = 96,
+                Margin = new Thickness(0, 0, 8, 0),
+                IsDefault = true,
+                Padding = new Thickness(14, 6, 14, 6)
+            };
+
+            var noButton = new System.Windows.Controls.Button
+            {
+                Content = "No",
+                MinWidth = 96,
+                IsCancel = true,
+                Padding = new Thickness(14, 6, 14, 6)
+            };
+
+            yesButton.Click += (_, __) =>
+            {
+                dialog.DialogResult = true;
+                dialog.Close();
+            };
+
+            noButton.Click += (_, __) =>
+            {
+                dialog.DialogResult = false;
+                dialog.Close();
+            };
+
+            buttonPanel.Children.Add(yesButton);
+            buttonPanel.Children.Add(noButton);
+
+            var footerGrid = new System.Windows.Controls.Grid();
+            footerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            footerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            if (!string.IsNullOrWhiteSpace(footerPrompt))
+            {
+                var promptText = new TextBlock
+                {
+                    Text = footerPrompt,
+                    FontSize = 14,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(0, 0, 12, 0),
+                    FontWeight = FontWeights.SemiBold,
+                    TextWrapping = TextWrapping.Wrap
+                };
+                System.Windows.Controls.Grid.SetColumn(promptText, 0);
+                footerGrid.Children.Add(promptText);
+            }
+
+            System.Windows.Controls.Grid.SetColumn(buttonPanel, 1);
+            footerGrid.Children.Add(buttonPanel);
+
+            System.Windows.Controls.Grid.SetRow(footerGrid, 2);
+            root.Children.Add(footerGrid);
+
+            dialog.Content = root;
+            return dialog.ShowDialog() == true;
+        }
+
+        private static string BuildDialogHeaderText()
+        {
+            return "VPinballX.starter";
+        }
+
+        private static string BuildWindowTitleText()
+        {
+            string versionLabel = GetEmbeddedVersionLabel();
+            if (string.IsNullOrWhiteSpace(versionLabel))
+                return "VPinballX.starter © 2025-2026 Richard Ludwig";
+
+            return $"VPinballX.starter {versionLabel} © 2025-2026 Richard Ludwig";
+        }
+
+        private static string GetEmbeddedVersionLabel()
+        {
+            try
+            {
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+
+                var informationalAttr = (System.Reflection.AssemblyInformationalVersionAttribute?)
+                    Attribute.GetCustomAttribute(assembly, typeof(System.Reflection.AssemblyInformationalVersionAttribute));
+                string? informationalVersion = informationalAttr?.InformationalVersion;
+
+                if (!string.IsNullOrWhiteSpace(informationalVersion))
+                {
+                    string normalized = informationalVersion.Split('+')[0].Trim();
+                    if (!string.IsNullOrWhiteSpace(normalized))
+                        return $"v{normalized}";
+                }
+
+                System.Version? assemblyVersion = assembly.GetName().Version;
+                if (assemblyVersion != null)
+                    return $"{assemblyVersion.Major}.{assemblyVersion.Minor}.{assemblyVersion.Build}";
+            }
+            catch
+            {
+                // Keep the header readable even if version metadata cannot be resolved.
+            }
+
+            return string.Empty;
+        }
+
+        private static bool TryLoadRtfIntoFlowDocument(System.Windows.Documents.FlowDocument flowDocument, string rtfText)
+        {
+            try
+            {
+                var range = new System.Windows.Documents.TextRange(flowDocument.ContentStart, flowDocument.ContentEnd);
+                byte[] rtfBytes = System.Text.Encoding.UTF8.GetBytes(rtfText);
+                using var stream = new MemoryStream(rtfBytes);
+                range.Load(stream, DataFormats.Rtf);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static string BuildWelcomeDialogRtf(string iniConfigFilename, string exeFileName, string defaultIniConfig)
+        {
+            string escapedIniFilename = EscapeRtf(iniConfigFilename);
+            string escapedExeFilename = EscapeRtf(exeFileName);
+            string escapedIniBlock = EscapeRtf(defaultIniConfig)
+                .Replace("\r\n", "\\line ")
+                .Replace("\n", "\\line ");
+
+            return "{\\rtf1\\ansi\\deff0" +
+                   "{\\fonttbl{\\f0 Segoe UI;}{\\f1 Consolas;}}" +
+                   "\\viewkind4\\uc1" +
+                   "\\pard\\sa120 Welcome new VPinballX.starter user!\\par" +
+                   "\\pard\\sa120 VPinballX.starter works like a launcher for VPinballX.exe.\\par" +
+                   "\\pard\\sa120 1) Start it with the same parameters you use for VPinballX.exe.\\par" +
+                   "\\pard\\sa120 2) If a table is provided, VPinballX.starter reads the table version and looks it up in the [VPinballX] section.\\par" +
+                   "\\pard\\sa120 3) It starts the mapped VPinballX executable.\\par" +
+                   "\\pard\\sa120 If no version match is found, what you define as [VPinballX] 'Default' is used. If no table is provided, [VPinballX.starter] 'DefaultVersion' is used.\\par" +
+                   "\\pard\\sa120 A log entry can be written to VPinballX.starter.log for every launch (when enabled in the ini).\\par" +
+                   "\\pard\\sa120 \\\"" + escapedIniFilename + "\\\" could not be found next to \\\"" + escapedExeFilename + "\\\" and will now be created using the template below." +
+                   " You need to edit the ini file for your setup and it can be placed next to the executable or next to your table file.\\par" +
+                   "\\pard\\sa60\\brdrb\\brdrs\\brdrw20\\brsp20\\par" +
+                   "\\pard\\sa80\\f1\\fs20 " + escapedIniBlock + 
+                   "\\pard\\sa60\\brdrb\\brdrs\\brdrw20\\brsp20\\par" +
+                   "\\pard\\sa120 Please read the comments in the ini file for further instructions.\\par" +
+                  "}";
+        }
+
+        private static string EscapeRtf(string text)
+        {
+            return text
+                .Replace("\\", "\\\\")
+                .Replace("{", "\\{")
+                .Replace("}", "\\}");
         }
 
         bool FileOrDirectoryExists(string name)

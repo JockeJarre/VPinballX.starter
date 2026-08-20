@@ -262,6 +262,9 @@ namespace VPinballX.starter
 
             [DllImport("user32.dll", SetLastError = true)]
             public static extern bool DestroyIcon(IntPtr hIcon);
+
+            [DllImport("user32.dll")]
+            public static extern bool GetKeyboardState(byte[] keyStates);
         }
         private void Application_Startup(object sender, StartupEventArgs eventArgs)
         {
@@ -278,9 +281,17 @@ namespace VPinballX.starter
             string activateSettingNumLock = "";
             string activateSettingScrollLock = "";
             
-            // Check if NumLock or ScrollLock keys are currently pressed
-            bool numLockPressed = (Native.GetAsyncKeyState(0x90) & 0x8000) != 0;
-            bool scrollLockPressed = (Native.GetAsyncKeyState(0x91) & 0x8000) != 0;
+            // Check if NumLock or ScrollLock keys are currently toggled
+            // Using GetKeyboardState to properly detect toggle states of keyboard keys
+            byte[] keyboardStateArray = new byte[256];
+            Native.GetKeyboardState(keyboardStateArray);
+            
+            bool numLockPressed = (keyboardStateArray[0x90] & 0x01) != 0;
+            bool scrollLockPressed = (keyboardStateArray[0x91] & 0x01) != 0;
+            
+            // Log keyboard state at startup
+            string keyboardStatus = $"Keyboard state - NumLock: {(numLockPressed ? "ON" : "OFF")}, ScrollLock: {(scrollLockPressed ? "ON" : "OFF")}";
+            LogToFile(keyboardStatus);
             
             // If keys are pressed, check for corresponding ActivateConfig and ActivateSetting entries
             if (numLockPressed)
@@ -354,6 +365,7 @@ namespace VPinballX.starter
                     string configPath = Path.Combine(strExeFilePath, activateConfigFile);
                     if (File.Exists(configPath))
                     {
+                        LogToFile($"Switching to alternative config {configPath} ");
                         strSettingsIniFilePath = configPath;
                     }
                 }
@@ -402,7 +414,7 @@ FirstArgTableName=true
 ; Add parameter only when '-play' is already in the command line parameters
 #AddParameter.-play=-Minimized
 
-[VPinballX.starter[10.81]]
+[VPinballX.starter.10.81]
 ;                  ^^^^^ This is the version of the selected VPinballX.exe, not the version the table was created with!
 ;AddParameter can be added to a version specific section
 #AddParameter=-First
@@ -614,7 +626,7 @@ Default.RevertX7=VPinballX74.exe
                     LogToFile($"Could not read file version from \"{vpxCommand}\": {e.Message}. Using fallback {fallbackLauncherVersion}.");
                 }
 
-                ConfigSection configSection = configFileFromPath[$"VPinballX.starter[{launcherFileVersion}]"]??configFileFromPath["VPinballX.starter"];
+                ConfigSection configSection = configFileFromPath[$"VPinballX.starter.{launcherFileVersion}"]??configFileFromPath["VPinballX.starter"];
                 if (configSection != null)
                 {
                     foreach (var key in configSection.Keys)

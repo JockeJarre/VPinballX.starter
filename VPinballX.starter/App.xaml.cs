@@ -341,22 +341,50 @@ namespace VPinballX.starter
                     }
                 }
             }
-
             // Check for ActivateConfig entries and load alternative config if needed
-            if (!string.IsNullOrEmpty(activateConfigNumLock) || !string.IsNullOrEmpty(activateConfigScrollLock))
+            if (!string.IsNullOrEmpty(activateConfigNumLock) || !string.IsNullOrEmpty(activateConfigScrollLock) || 
+!string.IsNullOrEmpty(activateConfigCapsLock) || !string.IsNullOrEmpty(activateConfigLeftShift) || 
+!string.IsNullOrEmpty(activateConfigRightShift) || !string.IsNullOrEmpty(activateConfigLeftCtrl) || 
+!string.IsNullOrEmpty(activateConfigRightCtrl))
             {
                 // Load the config file to check for ActivateConfig entries
                 var tempConfigFile = new ConfigParser(strSettingsIniFilePath);
                 
-                // Check for ActivateConfig.NumLock or ActivateConfig.ScrollLock
+                // Check for ActivateConfig entries
                 string activateConfigFile = "";
                 if (!string.IsNullOrEmpty(activateConfigNumLock) && tempConfigFile["VPinballX.starter"] != null)
                 {
                     activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigNumLock] ?? "";
                 }
-                if (string.IsNullOrEmpty(activateConfigFile) && !string.IsNullOrEmpty(activateConfigScrollLock) && tempConfigFile["VPinballX.starter"] != null)
+                if (string.IsNullOrEmpty(activateConfigFile) && !string.IsNullOrEmpty(activateConfigScrollLock) && 
+tempConfigFile["VPinballX.starter"] != null)
                 {
                     activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigScrollLock] ?? "";
+                }
+                if (string.IsNullOrEmpty(activateConfigFile) && !string.IsNullOrEmpty(activateConfigCapsLock) && 
+tempConfigFile["VPinballX.starter"] != null)
+                {
+                    activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigCapsLock] ?? "";
+                }
+                if (string.IsNullOrEmpty(activateConfigFile) && !string.IsNullOrEmpty(activateConfigLeftShift) && 
+tempConfigFile["VPinballX.starter"] != null)
+                {
+                    activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigLeftShift] ?? "";
+                }
+                if (string.IsNullOrEmpty(activateConfigFile) && !string.IsNullOrEmpty(activateConfigRightShift) && 
+tempConfigFile["VPinballX.starter"] != null)
+                {
+                    activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigRightShift] ?? "";
+                }
+                if (string.IsNullOrEmpty(activateConfigFile) && !string.IsNullOrEmpty(activateConfigLeftCtrl) && 
+tempConfigFile["VPinballX.starter"] != null)
+                {
+                    activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigLeftCtrl] ?? "";
+                }
+                if (string.IsNullOrEmpty(activateConfigFile) && !string.IsNullOrEmpty(activateConfigRightCtrl) && 
+tempConfigFile["VPinballX.starter"] != null)
+                {
+                    activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigRightCtrl] ?? "";
                 }
                 
                 // If we found an ActivateConfig file, use it instead
@@ -379,10 +407,15 @@ namespace VPinballX.starter
                     const string strDefaultIniConfig =
             @";A Configuration file for VPinballX.starter
 [VPinballX.starter]
-;ActivateConfig allows you to switch to a different ini file when setting the state of the NumLock and ScrollLock keys before starting.
+;ActivateConfig allows you to switch to a different ini file when setting the state of the NumLock, ScrollLock, CapsLock, 
+LeftShift, RightShift, LeftCtrl, and RightCtrl keys before starting.
 #ActivateConfig.NumLock=VpinballX.starter.NumLock.ini
 #ActivateConfig.ScrollLock=VPinballX.starter.ScrollLock.ini
-
+#ActivateConfig.CapsLock=VPinballX.starter.CapsLock.ini
+#ActivateConfig.LeftShift=VPinballX.starter.LeftShift.ini
+#ActivateConfig.RightShift=VPinballX.starter.RightShift.ini
+#ActivateConfig.LeftCtrl=VPinballX.starter.LeftCtrl.ini
+#ActivateConfig.RightCtrl=VPinballX.starter.RightCtrl.ini
 ;DefaultVersion when started without any table param.
 DefaultVersion=10.80
 LogVersions=true
@@ -423,6 +456,21 @@ FirstArgTableName=true
 #AddPath=C:\Program Files\VPinballX\VPinballX85\
 
 [TableNameExceptions.NumLockVR]
+Table Name=x64
+
+[TableNameExceptions.CapsLockVR]
+Table Name=x64
+
+[TableNameExceptions.LeftShiftVR]
+Table Name=x64
+
+[TableNameExceptions.RightShiftVR]
+Table Name=x64
+
+[TableNameExceptions.LeftCtrlVR]
+Table Name=x64
+
+[TableNameExceptions.RightCtrlVR]
 Table Name=x64
 
 [TableNameExceptions]
@@ -470,7 +518,13 @@ Default.RevertX7=VPinballX74.exe
                 
                 // Check for ActivateSetting entries and modify the configuration if needed
                 string activateSettingValue = "";
-                if (!string.IsNullOrEmpty(activateSettingNumLock) || !string.IsNullOrEmpty(activateSettingScrollLock))
+                if (!string.IsNullOrEmpty(activateSettingNumLock) || 
+!string.IsNullOrEmpty(activateSettingScrollLock) || 
+!string.IsNullOrEmpty(activateSettingCapsLock) || 
+!string.IsNullOrEmpty(activateSettingLeftShift) || 
+!string.IsNullOrEmpty(activateSettingRightShift) || 
+!string.IsNullOrEmpty(activateSettingLeftCtrl) || 
+!string.IsNullOrEmpty(activateSettingRightCtrl))
                 {
                     // Check if we have ActivateSetting entries in the config
                     if (configFileFromPath["VPinballX.starter"] != null)
@@ -482,6 +536,26 @@ Default.RevertX7=VPinballX74.exe
                         else if (!string.IsNullOrEmpty(activateSettingScrollLock) && configFileFromPath["VPinballX.starter"][activateSettingScrollLock] != null)
                         {
                             activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingScrollLock];
+                        }
+                        else if (!string.IsNullOrEmpty(activateSettingCapsLock) && configFileFromPath["VPinballX.starter"][activateSettingCapsLock] != null)
+                        {
+                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingCapsLock];
+                        }
+                        else if (!string.IsNullOrEmpty(activateSettingLeftShift) && configFileFromPath["VPinballX.starter"][activateSettingLeftShift] != null)
+                        {
+                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingLeftShift];
+                        }
+                        else if (!string.IsNullOrEmpty(activateSettingRightShift) && configFileFromPath["VPinballX.starter"][activateSettingRightShift] != null)
+                        {
+                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingRightShift];
+                        }
+                        else if (!string.IsNullOrEmpty(activateSettingLeftCtrl) && configFileFromPath["VPinballX.starter"][activateSettingLeftCtrl] != null)
+                        {
+                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingLeftCtrl];
+                        }
+                        else if (!string.IsNullOrEmpty(activateSettingRightCtrl) && configFileFromPath["VPinballX.starter"][activateSettingRightCtrl] != null)
+                        {
+                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingRightCtrl];
                         }
                     }
                 }

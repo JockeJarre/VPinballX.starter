@@ -459,15 +459,11 @@ tempConfigFile["VPinballX.starter"] != null)
                     const string strDefaultIniConfig =
             @";A Configuration file for VPinballX.starter
 [VPinballX.starter]
-;ActivateConfig allows you to switch to a different ini file when setting the state of the NumLock, ScrollLock, CapsLock, 
-LeftShift, RightShift, LeftCtrl, and RightCtrl keys before starting.
-#ActivateConfig.NumLock=VpinballX.starter.NumLock.ini
+;ActivateConfig allows you to switch to a different ini file when setting the state of the NumLock, ScrollLock, CapsLock, LeftShift, RightShift, LeftCtrl, and RightCtrl keys before starting.
 #ActivateConfig.ScrollLock=VPinballX.starter.ScrollLock.ini
-#ActivateConfig.CapsLock=VPinballX.starter.CapsLock.ini
-#ActivateConfig.LeftShift=VPinballX.starter.LeftShift.ini
-#ActivateConfig.RightShift=VPinballX.starter.RightShift.ini
-#ActivateConfig.LeftCtrl=VPinballX.starter.LeftCtrl.ini
-#ActivateConfig.RightCtrl=VPinballX.starter.RightCtrl.ini
+;ActivateSetting allows you to switch to a different VPinballX.exe when setting the state of the NumLock, ScrollLock, CapsLock, LeftShift, RightShift, LeftCtrl, and RightCtrl keys before starting.
+#ActivateSetting.RightShift=RightShiftVR
+
 ;DefaultVersion when started without any table param.
 DefaultVersion=10.80
 LogVersions=true
@@ -507,22 +503,8 @@ FirstArgTableName=true
 ;AddPath can be added to a version specific section, the PATH is amended with the value.
 #AddPath=C:\Program Files\VPinballX\VPinballX85\
 
-[TableNameExceptions.NumLockVR]
-Table Name=x64
-
-[TableNameExceptions.CapsLockVR]
-Table Name=x64
-
-[TableNameExceptions.LeftShiftVR]
-Table Name=x64
-
+; This is activated above in ActivateSetting.RightShift, which means you will need both this one and the [VPinballX.RightShiftVR] in the ini
 [TableNameExceptions.RightShiftVR]
-Table Name=x64
-
-[TableNameExceptions.LeftCtrlVR]
-Table Name=x64
-
-[TableNameExceptions.RightCtrlVR]
 Table Name=x64
 
 [TableNameExceptions]
@@ -534,6 +516,10 @@ GL=GL
 ;Revert to older VPX 7.4 for certain tables
 X74=.RevertX7
 Old table=.RevertX7
+
+; This is activated above in ActivateSetting.RightShift, which means you will need both this one and the [TableNameExceptions.RightShiftVR] in the ini
+[VPinballX.RightShiftVR]
+Default=VPinballXVR.exe
 
 [VPinballX]
 ;Default value used when not found in the table below.
@@ -584,31 +570,31 @@ Default.RevertX7=VPinballX74.exe
                         // Prioritize Shift/Ctrl keys over toggle keys
                         if (!string.IsNullOrEmpty(activateSettingLeftShift) && configFileFromPath["VPinballX.starter"][activateSettingLeftShift] != null)
                         {
-                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingLeftShift];
+                            activateSettingValue = "." + configFileFromPath["VPinballX.starter"][activateSettingLeftShift];
                         }
                         else if (!string.IsNullOrEmpty(activateSettingRightShift) && configFileFromPath["VPinballX.starter"][activateSettingRightShift] != null)
                         {
-                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingRightShift];
+                            activateSettingValue = "." + configFileFromPath["VPinballX.starter"][activateSettingRightShift];
                         }
                         else if (!string.IsNullOrEmpty(activateSettingLeftCtrl) && configFileFromPath["VPinballX.starter"][activateSettingLeftCtrl] != null)
                         {
-                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingLeftCtrl];
+                            activateSettingValue = "." + configFileFromPath["VPinballX.starter"][activateSettingLeftCtrl];
                         }
                         else if (!string.IsNullOrEmpty(activateSettingRightCtrl) && configFileFromPath["VPinballX.starter"][activateSettingRightCtrl] != null)
                         {
-                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingRightCtrl];
+                            activateSettingValue = "." + configFileFromPath["VPinballX.starter"][activateSettingRightCtrl];
                         }
                         else if (!string.IsNullOrEmpty(activateSettingNumLock) && configFileFromPath["VPinballX.starter"][activateSettingNumLock] != null)
                         {
-                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingNumLock];
+                            activateSettingValue = "." + configFileFromPath["VPinballX.starter"][activateSettingNumLock];
                         }
                         else if (!string.IsNullOrEmpty(activateSettingScrollLock) && configFileFromPath["VPinballX.starter"][activateSettingScrollLock] != null)
                         {
-                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingScrollLock];
+                            activateSettingValue = "." + configFileFromPath["VPinballX.starter"][activateSettingScrollLock];
                         }
                         else if (!string.IsNullOrEmpty(activateSettingCapsLock) && configFileFromPath["VPinballX.starter"][activateSettingCapsLock] != null)
                         {
-                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingCapsLock];
+                            activateSettingValue = "." + configFileFromPath["VPinballX.starter"][activateSettingCapsLock];
                         }
                     }
                 }
@@ -681,15 +667,15 @@ Default.RevertX7=VPinballX74.exe
                 if (!tableFilename.Equals(""))
                 {
                     // Check the TableNameExceptions either for a Table Name within the list or a specific alien VPX version used (e.g x64, x32 or GL)
-                    if (configFileFromPath["TableNameExceptions"] != null)
+                    if (configFileFromPath["TableNameExceptions" + activateSettingValue] != null)
                     {
-                        foreach (var key in configFileFromPath["TableNameExceptions"].Keys)
+                        foreach (var key in configFileFromPath["TableNameExceptions" + activateSettingValue].Keys)
                         {
                             if (tableFilename.Contains(key.Name))
                             {
                                 if (logVersions) LogToFile($"Found {key.Name} in {tableFilename}");
 
-                                if (configFileFromPath["VPinballX"][$"{strFileVersion}{key.ValueRaw}"] != null)
+                                if (configFileFromPath["VPinballX" + activateSettingValue][$"{strFileVersion}{key.ValueRaw}"] != null)
                                 {
                                     strFileVersion = $"{strFileVersion}{key.ValueRaw}";
                                     break;
@@ -698,10 +684,10 @@ Default.RevertX7=VPinballX74.exe
                         }
                     }
                 }
-                string vpxCommand = StripQuotes(configFileFromPath["VPinballX"][strFileVersion] ?? configFileFromPath["VPinballX"]["Default"]);
+                string vpxCommand = StripQuotes(configFileFromPath["VPinballX" + activateSettingValue][strFileVersion] ?? configFileFromPath["VPinballX" + activateSettingValue]["Default"]);
 
                 if (object.Equals(vpxCommand, null))
-                    throw new ArgumentException($"No\n\n[VPinballX]\n{strFileVersion}=VPinballXxx.exe\nor\n\n\n[VPinballX]\nDefault=VPinballXxx.exe\n\nfound in the ini! ({strSettingsIniFilePath})");
+                    throw new ArgumentException($"No\n\n[VPinballX + activateSettingValue]\n{strFileVersion}=VPinballXxx.exe\nor\n\n\n[VPinballX + activateSettingValue]\nDefault=VPinballXxx.exe\n\nfound in the ini! ({strSettingsIniFilePath})");
 
                 if (!Path.IsPathFullyQualified(vpxCommand))
                     vpxCommand = Path.Combine(strExeFilePath, vpxCommand);
@@ -811,7 +797,7 @@ Default.RevertX7=VPinballX74.exe
                     Native.MessageBoxW(IntPtr.Zero, warnText, $"{strExeFileName}: Already running", Native.MB_OK | Native.MB_ICONEXCLAMATION);
                     Environment.Exit(1);
                 }
-
+                LogToFile($"Starting \"{vpxCommand}\" {String.Join(" ", mArgs.Select(s => s.Contains(" ") ? $"\"{s}\"" : s).ToList())}");
                 StartAnotherProgram(vpxCommand, mArgs.ToArray(), true, activateWindowTitle, activateWindowTimeoutMs);
                 if (PREPOSTactive && (!tableFilename.Equals("")))
                 {

@@ -262,6 +262,9 @@ namespace VPinballX.starter
 
             [DllImport("user32.dll", SetLastError = true)]
             public static extern bool DestroyIcon(IntPtr hIcon);
+
+            [DllImport("user32.dll")]
+            public static extern bool GetKeyboardState(byte[] keyStates);
         }
         private void Application_Startup(object sender, StartupEventArgs eventArgs)
         {
@@ -275,25 +278,85 @@ namespace VPinballX.starter
             // Check keyboard state for ActivateConfig and ActivateSetting
             string activateConfigNumLock = "";
             string activateConfigScrollLock = "";
+            string activateConfigCapsLock = "";
+            string activateConfigLeftShift = "";
+            string activateConfigRightShift = "";
+            string activateConfigLeftCtrl = "";
+            string activateConfigRightCtrl = "";
             string activateSettingNumLock = "";
             string activateSettingScrollLock = "";
+            string activateSettingCapsLock = "";
+            string activateSettingLeftShift = "";
+            string activateSettingRightShift = "";
+            string activateSettingLeftCtrl = "";
+            string activateSettingRightCtrl = "";
             
-            // Check if NumLock or ScrollLock keys are currently pressed
-            bool numLockPressed = (Native.GetAsyncKeyState(0x90) & 0x8000) != 0;
-            bool scrollLockPressed = (Native.GetAsyncKeyState(0x91) & 0x8000) != 0;
+            // Check if Shift or Ctrl keys are currently pressed (non-toggle states)
+            // Using GetKeyboardState to properly detect pressed states of keyboard keys
+            byte[] keyboardStateArray = new byte[256];
+            Native.GetKeyboardState(keyboardStateArray);
             
-            // If keys are pressed, check for corresponding ActivateConfig and ActivateSetting entries
-            if (numLockPressed)
+            // Check Shift/Ctrl keys first (highest priority)
+            // Check Left Shift
+            if ((keyboardStateArray[0xA0] & 0x80) != 0)
             {
-                activateConfigNumLock = "ActivateConfig.NumLock";
-                activateSettingNumLock = "ActivateSetting.NumLock";
+                activateConfigLeftShift = "ActivateConfig.LeftShift";
+                activateSettingLeftShift = "ActivateSetting.LeftShift";
+            }
+            // Check Right Shift
+            else if ((keyboardStateArray[0xA1] & 0x80) != 0)
+            {
+                activateConfigRightShift = "ActivateConfig.RightShift";
+                activateSettingRightShift = "ActivateSetting.RightShift";
+            }
+            // Check Left Ctrl
+            else if ((keyboardStateArray[0xA2] & 0x80) != 0)
+            {
+                activateConfigLeftCtrl = "ActivateConfig.LeftCtrl";
+                activateSettingLeftCtrl = "ActivateSetting.LeftCtrl";
+            }
+            // Check Right Ctrl
+            else if ((keyboardStateArray[0xA3] & 0x80) != 0)
+            {
+                activateConfigRightCtrl = "ActivateConfig.RightCtrl";
+                activateSettingRightCtrl = "ActivateSetting.RightCtrl";
+            }
+            // If no Shift/Ctrl keys are pressed, check toggle keys
+            else
+            {
+                // Check NumLock
+                if ((keyboardStateArray[0x90] & 0x01) != 0)
+                {
+                    activateConfigNumLock = "ActivateConfig.NumLock";
+                    activateSettingNumLock = "ActivateSetting.NumLock";
+                }
+                
+                // Check ScrollLock
+                if ((keyboardStateArray[0x91] & 0x01) != 0)
+                {
+                    activateConfigScrollLock = "ActivateConfig.ScrollLock";
+                    activateSettingScrollLock = "ActivateSetting.ScrollLock";
+                }
+                
+                // Check CapsLock
+                if ((keyboardStateArray[0x14] & 0x01) != 0)
+                {
+                    activateConfigCapsLock = "ActivateConfig.CapsLock";
+                    activateSettingCapsLock = "ActivateSetting.CapsLock";
+                }
             }
             
-            if (scrollLockPressed)
-            {
-                activateConfigScrollLock = "ActivateConfig.ScrollLock";
-                activateSettingScrollLock = "ActivateSetting.ScrollLock";
-            }
+            // Log keyboard state at startup
+            string numLockStatus = (keyboardStateArray[0x90] & 0x01) != 0 ? "ON" : "OFF";
+            string scrollLockStatus = (keyboardStateArray[0x91] & 0x01) != 0 ? "ON" : "OFF";
+            string capsLockStatus = (keyboardStateArray[0x14] & 0x01) != 0 ? "ON" : "OFF";
+            string leftShiftStatus = (keyboardStateArray[0xA0] & 0x80) != 0 ? "PRESSED" : "RELEASED";
+            string rightShiftStatus = (keyboardStateArray[0xA1] & 0x80) != 0 ? "PRESSED" : "RELEASED";
+            string leftCtrlStatus = (keyboardStateArray[0xA2] & 0x80) != 0 ? "PRESSED" : "RELEASED";
+            string rightCtrlStatus = (keyboardStateArray[0xA3] & 0x80) != 0 ? "PRESSED" : "RELEASED";
+            
+            string keyboardStatus = $"Keyboard state - NumLock: {numLockStatus}, ScrollLock: {scrollLockStatus}, CapsLock: {capsLockStatus}, LeftShift: {leftShiftStatus}, RightShift: {rightShiftStatus}, LeftCtrl: {leftCtrlStatus}, RightCtrl: {rightCtrlStatus}";
+            LogToFile(keyboardStatus);
 
             // Extract table filename from args to determine INI location
             string tableFilename = "";
@@ -330,22 +393,50 @@ namespace VPinballX.starter
                     }
                 }
             }
-
             // Check for ActivateConfig entries and load alternative config if needed
-            if (!string.IsNullOrEmpty(activateConfigNumLock) || !string.IsNullOrEmpty(activateConfigScrollLock))
+            if (!string.IsNullOrEmpty(activateConfigNumLock) || !string.IsNullOrEmpty(activateConfigScrollLock) || 
+!string.IsNullOrEmpty(activateConfigCapsLock) || !string.IsNullOrEmpty(activateConfigLeftShift) || 
+!string.IsNullOrEmpty(activateConfigRightShift) || !string.IsNullOrEmpty(activateConfigLeftCtrl) || 
+!string.IsNullOrEmpty(activateConfigRightCtrl))
             {
                 // Load the config file to check for ActivateConfig entries
                 var tempConfigFile = new ConfigParser(strSettingsIniFilePath);
                 
-                // Check for ActivateConfig.NumLock or ActivateConfig.ScrollLock
+                // Check for ActivateConfig entries - prioritize Shift/Ctrl keys over toggle keys
                 string activateConfigFile = "";
-                if (!string.IsNullOrEmpty(activateConfigNumLock) && tempConfigFile["VPinballX.starter"] != null)
+                if (!string.IsNullOrEmpty(activateConfigLeftShift) && tempConfigFile["VPinballX.starter"] != null)
+                {
+                    activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigLeftShift] ?? "";
+                }
+                if (string.IsNullOrEmpty(activateConfigFile) && !string.IsNullOrEmpty(activateConfigRightShift) && 
+tempConfigFile["VPinballX.starter"] != null)
+                {
+                    activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigRightShift] ?? "";
+                }
+                if (string.IsNullOrEmpty(activateConfigFile) && !string.IsNullOrEmpty(activateConfigLeftCtrl) && 
+tempConfigFile["VPinballX.starter"] != null)
+                {
+                    activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigLeftCtrl] ?? "";
+                }
+                if (string.IsNullOrEmpty(activateConfigFile) && !string.IsNullOrEmpty(activateConfigRightCtrl) && 
+tempConfigFile["VPinballX.starter"] != null)
+                {
+                    activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigRightCtrl] ?? "";
+                }
+                if (string.IsNullOrEmpty(activateConfigFile) && !string.IsNullOrEmpty(activateConfigNumLock) && 
+tempConfigFile["VPinballX.starter"] != null)
                 {
                     activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigNumLock] ?? "";
                 }
-                if (string.IsNullOrEmpty(activateConfigFile) && !string.IsNullOrEmpty(activateConfigScrollLock) && tempConfigFile["VPinballX.starter"] != null)
+                if (string.IsNullOrEmpty(activateConfigFile) && !string.IsNullOrEmpty(activateConfigScrollLock) && 
+tempConfigFile["VPinballX.starter"] != null)
                 {
                     activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigScrollLock] ?? "";
+                }
+                if (string.IsNullOrEmpty(activateConfigFile) && !string.IsNullOrEmpty(activateConfigCapsLock) && 
+tempConfigFile["VPinballX.starter"] != null)
+                {
+                    activateConfigFile = tempConfigFile["VPinballX.starter"][activateConfigCapsLock] ?? "";
                 }
                 
                 // If we found an ActivateConfig file, use it instead
@@ -354,6 +445,7 @@ namespace VPinballX.starter
                     string configPath = Path.Combine(strExeFilePath, activateConfigFile);
                     if (File.Exists(configPath))
                     {
+                        LogToFile($"Switching to alternative config {configPath} ");
                         strSettingsIniFilePath = configPath;
                     }
                 }
@@ -367,9 +459,10 @@ namespace VPinballX.starter
                     const string strDefaultIniConfig =
             @";A Configuration file for VPinballX.starter
 [VPinballX.starter]
-;ActivateConfig allows you to switch to a different ini file when setting the state of the NumLock and ScrollLock keys before starting.
-#ActivateConfig.NumLock=VpinballX.starter.NumLock.ini
+;ActivateConfig allows you to switch to a different ini file when setting the state of the NumLock, ScrollLock, CapsLock, LeftShift, RightShift, LeftCtrl, and RightCtrl keys before starting.
 #ActivateConfig.ScrollLock=VPinballX.starter.ScrollLock.ini
+;ActivateSetting allows you to switch to a different VPinballX.exe when setting the state of the NumLock, ScrollLock, CapsLock, LeftShift, RightShift, LeftCtrl, and RightCtrl keys before starting.
+#ActivateSetting.RightShift=RightShiftVR
 
 ;DefaultVersion when started without any table param.
 DefaultVersion=10.80
@@ -402,7 +495,7 @@ FirstArgTableName=true
 ; Add parameter only when '-play' is already in the command line parameters
 #AddParameter.-play=-Minimized
 
-[VPinballX.starter[10.81]]
+[VPinballX.starter.10.81]
 ;                  ^^^^^ This is the version of the selected VPinballX.exe, not the version the table was created with!
 ;AddParameter can be added to a version specific section
 #AddParameter=-First
@@ -410,7 +503,8 @@ FirstArgTableName=true
 ;AddPath can be added to a version specific section, the PATH is amended with the value.
 #AddPath=C:\Program Files\VPinballX\VPinballX85\
 
-[TableNameExceptions.NumLockVR]
+; This is activated above in ActivateSetting.RightShift, which means you will need both this one and the [VPinballX.RightShiftVR] in the ini
+[TableNameExceptions.RightShiftVR]
 Table Name=x64
 
 [TableNameExceptions]
@@ -422,6 +516,10 @@ GL=GL
 ;Revert to older VPX 7.4 for certain tables
 X74=.RevertX7
 Old table=.RevertX7
+
+; This is activated above in ActivateSetting.RightShift, which means you will need both this one and the [TableNameExceptions.RightShiftVR] in the ini
+[VPinballX.RightShiftVR]
+Default=VPinballXVR.exe
 
 [VPinballX]
 ;Default value used when not found in the table below.
@@ -458,18 +556,45 @@ Default.RevertX7=VPinballX74.exe
                 
                 // Check for ActivateSetting entries and modify the configuration if needed
                 string activateSettingValue = "";
-                if (!string.IsNullOrEmpty(activateSettingNumLock) || !string.IsNullOrEmpty(activateSettingScrollLock))
+                if (!string.IsNullOrEmpty(activateSettingNumLock) || 
+!string.IsNullOrEmpty(activateSettingScrollLock) || 
+!string.IsNullOrEmpty(activateSettingCapsLock) || 
+!string.IsNullOrEmpty(activateSettingLeftShift) || 
+!string.IsNullOrEmpty(activateSettingRightShift) || 
+!string.IsNullOrEmpty(activateSettingLeftCtrl) || 
+!string.IsNullOrEmpty(activateSettingRightCtrl))
                 {
                     // Check if we have ActivateSetting entries in the config
                     if (configFileFromPath["VPinballX.starter"] != null)
                     {
-                        if (!string.IsNullOrEmpty(activateSettingNumLock) && configFileFromPath["VPinballX.starter"][activateSettingNumLock] != null)
+                        // Prioritize Shift/Ctrl keys over toggle keys
+                        if (!string.IsNullOrEmpty(activateSettingLeftShift) && configFileFromPath["VPinballX.starter"][activateSettingLeftShift] != null)
                         {
-                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingNumLock];
+                            activateSettingValue = "." + configFileFromPath["VPinballX.starter"][activateSettingLeftShift];
+                        }
+                        else if (!string.IsNullOrEmpty(activateSettingRightShift) && configFileFromPath["VPinballX.starter"][activateSettingRightShift] != null)
+                        {
+                            activateSettingValue = "." + configFileFromPath["VPinballX.starter"][activateSettingRightShift];
+                        }
+                        else if (!string.IsNullOrEmpty(activateSettingLeftCtrl) && configFileFromPath["VPinballX.starter"][activateSettingLeftCtrl] != null)
+                        {
+                            activateSettingValue = "." + configFileFromPath["VPinballX.starter"][activateSettingLeftCtrl];
+                        }
+                        else if (!string.IsNullOrEmpty(activateSettingRightCtrl) && configFileFromPath["VPinballX.starter"][activateSettingRightCtrl] != null)
+                        {
+                            activateSettingValue = "." + configFileFromPath["VPinballX.starter"][activateSettingRightCtrl];
+                        }
+                        else if (!string.IsNullOrEmpty(activateSettingNumLock) && configFileFromPath["VPinballX.starter"][activateSettingNumLock] != null)
+                        {
+                            activateSettingValue = "." + configFileFromPath["VPinballX.starter"][activateSettingNumLock];
                         }
                         else if (!string.IsNullOrEmpty(activateSettingScrollLock) && configFileFromPath["VPinballX.starter"][activateSettingScrollLock] != null)
                         {
-                            activateSettingValue = configFileFromPath["VPinballX.starter"][activateSettingScrollLock];
+                            activateSettingValue = "." + configFileFromPath["VPinballX.starter"][activateSettingScrollLock];
+                        }
+                        else if (!string.IsNullOrEmpty(activateSettingCapsLock) && configFileFromPath["VPinballX.starter"][activateSettingCapsLock] != null)
+                        {
+                            activateSettingValue = "." + configFileFromPath["VPinballX.starter"][activateSettingCapsLock];
                         }
                     }
                 }
@@ -542,15 +667,15 @@ Default.RevertX7=VPinballX74.exe
                 if (!tableFilename.Equals(""))
                 {
                     // Check the TableNameExceptions either for a Table Name within the list or a specific alien VPX version used (e.g x64, x32 or GL)
-                    if (configFileFromPath["TableNameExceptions"] != null)
+                    if (configFileFromPath["TableNameExceptions" + activateSettingValue] != null)
                     {
-                        foreach (var key in configFileFromPath["TableNameExceptions"].Keys)
+                        foreach (var key in configFileFromPath["TableNameExceptions" + activateSettingValue].Keys)
                         {
                             if (tableFilename.Contains(key.Name))
                             {
                                 if (logVersions) LogToFile($"Found {key.Name} in {tableFilename}");
 
-                                if (configFileFromPath["VPinballX"][$"{strFileVersion}{key.ValueRaw}"] != null)
+                                if (configFileFromPath["VPinballX" + activateSettingValue][$"{strFileVersion}{key.ValueRaw}"] != null)
                                 {
                                     strFileVersion = $"{strFileVersion}{key.ValueRaw}";
                                     break;
@@ -559,10 +684,10 @@ Default.RevertX7=VPinballX74.exe
                         }
                     }
                 }
-                string vpxCommand = StripQuotes(configFileFromPath["VPinballX"][strFileVersion] ?? configFileFromPath["VPinballX"]["Default"]);
+                string vpxCommand = StripQuotes(configFileFromPath["VPinballX" + activateSettingValue][strFileVersion] ?? configFileFromPath["VPinballX" + activateSettingValue]["Default"]);
 
                 if (object.Equals(vpxCommand, null))
-                    throw new ArgumentException($"No\n\n[VPinballX]\n{strFileVersion}=VPinballXxx.exe\nor\n\n\n[VPinballX]\nDefault=VPinballXxx.exe\n\nfound in the ini! ({strSettingsIniFilePath})");
+                    throw new ArgumentException($"No\n\n[VPinballX + activateSettingValue]\n{strFileVersion}=VPinballXxx.exe\nor\n\n\n[VPinballX + activateSettingValue]\nDefault=VPinballXxx.exe\n\nfound in the ini! ({strSettingsIniFilePath})");
 
                 if (!Path.IsPathFullyQualified(vpxCommand))
                     vpxCommand = Path.Combine(strExeFilePath, vpxCommand);
@@ -614,7 +739,7 @@ Default.RevertX7=VPinballX74.exe
                     LogToFile($"Could not read file version from \"{vpxCommand}\": {e.Message}. Using fallback {fallbackLauncherVersion}.");
                 }
 
-                ConfigSection configSection = configFileFromPath[$"VPinballX.starter[{launcherFileVersion}]"]??configFileFromPath["VPinballX.starter"];
+                ConfigSection configSection = configFileFromPath[$"VPinballX.starter.{launcherFileVersion}"]??configFileFromPath["VPinballX.starter"];
                 if (configSection != null)
                 {
                     foreach (var key in configSection.Keys)
@@ -672,7 +797,7 @@ Default.RevertX7=VPinballX74.exe
                     Native.MessageBoxW(IntPtr.Zero, warnText, $"{strExeFileName}: Already running", Native.MB_OK | Native.MB_ICONEXCLAMATION);
                     Environment.Exit(1);
                 }
-
+                LogToFile($"Starting \"{vpxCommand}\" {String.Join(" ", mArgs.Select(s => s.Contains(" ") ? $"\"{s}\"" : s).ToList())}");
                 StartAnotherProgram(vpxCommand, mArgs.ToArray(), true, activateWindowTitle, activateWindowTimeoutMs);
                 if (PREPOSTactive && (!tableFilename.Equals("")))
                 {

@@ -63,17 +63,16 @@ and looks in the [VPinballX] table above to find out which version of VPinballX.
 
 It will then run the VPinballXxx.exe that you have configured with exactly the same parameters.
 
-If you simply double-click the VPinballX.starter without a table, the default entry under [VPinballX.starter] will be used.
+If you simply double-click the VPinballX.starter without a table, the *DefaultVersion* entry under [VPinballX.starter] will be used.
 
-Or if it cannot find a version stored in the table, it will use the default in [VPinballX].
+Or if it cannot find a version stored in the table, it will use the *Default* in [VPinballX].
 
 In this way, the correct table version or the version you have selected will be used.
-Each time you start VPinballX.starter, a log entry will be added to VPinballX.starter.log stating which version was used.
-This can be disabled by setting LogVersions=0.
+Each time you start VPinballX.starter, a log entry will be added to VPinballX.starter.log stating which version was used. This can be disabled by setting LogVersions=0.
+
 # Table Name Exceptions
-Exceptions to the automated finding the right executable can be defined in the [TableNameExceptions] table.
-The Exceptions are either that a string is added to the table filename hinting that this table should use the x32 version instead,
-or can be parts of a table filename pointing to the same string.
+Exceptions to the automated executable search can be defined in the [TableNameExceptions] table.
+The Exceptions are either that a string is added to the table filename hinting that this table should use the x32 version instead for example or can be parts of a table filename pointing to the same string.
 This string will be added when searched for the executable. 
 E.g starting a table needing 10.80 and having an exception "GL" will look for 10.80GL in the VPinballX table.
 This is made using pure string handling, there is NO logic behind the strings in the ini file.
@@ -93,15 +92,16 @@ Normally it should be enough to have two of them, an exception and the two defau
 
 ``` ini
 [VPinballX.starter]
-DefaultVersion=10.74
+DefaultVersion=10.80
+
 [TableNameExceptions]
 x32=x32
+
 [VPinballX]
-Default=VPinballX64.74.exe
-10.74x32=VPinballX32.74.exe
-10.74=VPinballX64.74.exe
-10.80x32=VPinballX32.85.exe
-10.80=VPinballX64.85.exe
+Default=VPinballX64.exe
+10.80x32=VPinballX32.exe
+10.80=VPinballX64.exe
+10.81=C:\vPinball\VisualPinball10.81\VPinballX_BGFX64.exe
 ```
 
 Once you are happy with VPinballX.starter.exe, you can rename it to VPinballX.exe;
@@ -125,14 +125,14 @@ This information can be used to have different PRE and POST scripts depending on
 PREPOSTactive=false
 PREcmdExtension=.pre.cmd
 POSTcmdExtension=.post.cmd
-;you can have different settings depending on the caller: (Pinup popper show up as anonymous)
+;you can have different settings depending on the caller: (Pinup popper show up as ".anonymous")
 PREcmdExtension.explorer=.explorerpre.cmd
 POSTcmdExtension.explorer=.explorerpost.cmd
 ```
 
 **Be sure to not start anything in these cmd batch files which block the script!**
 
-# Adding VPX parameters
+# Adding VPX parameters and PATH setting
 
 It is possible to add parameters to the VPX calls by setting certain Configuration options:
 
@@ -140,6 +140,44 @@ It is possible to add parameters to the VPX calls by setting certain Configurati
 ; Add parameters to the command line
 AddParameter=-Primary
 AddParameter.-play=-Minimized
+; Prepend directories to the PATH for the started VPX process (; separated)
+AddPath=C:\Tools\VPX
+AddPath.TableSuffix=C:\Tools\VPXSpecial
 ```
 
 AddParameter on it's own means it is always added independent on other command line options. `AddParameter.-play` means that the parameters are only added if the current command line contain `-play`. The above example set VPX to use the Primary screen and when started as "play", the VPX windows is minimized.
+
+AddPath works the same way but amends the PATH environment of the started VPX process instead. `AddPath` on its own is always prepended, `AddPath.<text>` is only prepended when the table filename contains `<text>`.
+
+Both settings can also be placed in a version specific section `[VPinballX.starter.10.8.1]`, where `10.8.1` is the file version (Major.Minor.Build) of the selected VPinballX.exe (not the table version). The compact form `[VPinballX.starter.10.81]` works as well. Lookup order is full form, then compact form, then `[VPinballX.starter]`:
+
+``` ini
+[VPinballX.starter.10.8.1]
+AddParameter=-First
+AddPath=C:\Temp
+```
+
+# Local ini in table directory
+
+If a table file is given, VPinballX.starter first looks for `VPinballX.starter.ini` in the table directory. If found it is used, otherwise the `VPinballX.starter.ini` next to the exe is used as fallback.
+This makes it possible to use a completely different VPX version for tables in a directory. e.g. VR or to start a later version of VPX.
+
+# ScrollLock and NumLock ini support
+
+The keyboard state at startup can switch the config or the selected exe via `ActivateConfig` and `ActivateSetting` under `[VPinballX.starter]`. Supported keys are `NumLock`, `ScrollLock`, `CapsLock`, `LeftShift`, `RightShift`, `LeftCtrl` and `RightCtrl`. Pressed Shift/Ctrl keys take priority over the toggle keys.
+
+``` ini
+[VPinballX.starter]
+ActivateConfig.ScrollLock=VPinballX.starter.ScrollLock.ini (relative to the ini in use)
+ActivateSetting.RightShift=RightShiftVR
+```
+
+`ActivateConfig.<key>` switches to a different ini file (resolved next to the ini in use, i.e. table directory if that one was selected, otherwise exe directory). `ActivateSetting.<key>` appends a suffix to the `[VPinballX]` and `[TableNameExceptions]` section lookup, e.g. `RightShiftVR` uses `[VPinballX.RightShiftVR]` and `[TableNameExceptions.RightShiftVR]`:
+
+``` ini
+[TableNameExceptions.RightShiftVR]
+Table Name=x64
+
+[VPinballX.RightShiftVR]
+Default=VPinballXVR.exe
+```

@@ -440,9 +440,10 @@ tempConfigFile["VPinballX.starter"] != null)
                 }
                 
                 // If we found an ActivateConfig file, use it instead
+                // Resolve it next to the ini already selected (table dir or exe dir), so a table-local setup stays together.
                 if (!string.IsNullOrEmpty(activateConfigFile))
                 {
-                    string configPath = Path.Combine(strExeFilePath, activateConfigFile);
+                    string configPath = Path.Combine(Path.GetDirectoryName(strSettingsIniFilePath) ?? strExeFilePath, activateConfigFile);
                     if (File.Exists(configPath))
                     {
                         LogToFile($"Switching to alternative config {configPath} ");
@@ -495,8 +496,14 @@ FirstArgTableName=true
 ; Add parameter only when '-play' is already in the command line parameters
 #AddParameter.-play=-Minimized
 
-[VPinballX.starter.10.81]
-;                  ^^^^^ This is the version of the selected VPinballX.exe, not the version the table was created with!
+; Prepend directories to the PATH for the started VPX process (; separated)
+#AddPath=C:\Tools\VPX
+; Add path only when the table filename contains the text after the dot
+#AddPath.TableSuffix=C:\Tools\VPXSpecial
+
+[VPinballX.starter.10.8.1]
+;                  ^^^^^^ This is the file version (Major.Minor.Build) of the selected VPinballX.exe, not the version the table was created with!
+;The compact form [VPinballX.starter.10.81] works as well and is used when the full form is missing.
 ;AddParameter can be added to a version specific section
 #AddParameter=-First
 
@@ -720,6 +727,7 @@ Default.RevertX7=VPinballX74.exe
                 }
                 const string fallbackLauncherVersion = "99.9.9";
                 string launcherFileVersion = fallbackLauncherVersion;
+                string launcherFileVersionShort = "99.99";
 
                 try
                 {
@@ -731,6 +739,7 @@ Default.RevertX7=VPinballX74.exe
                         {
                             int buildPart = vpxVersionInfo.FileBuildPart >= 0 ? vpxVersionInfo.FileBuildPart : 0;
                             launcherFileVersion = $"{vpxVersionInfo.FileMajorPart}.{vpxVersionInfo.FileMinorPart}.{buildPart}";
+                            launcherFileVersionShort = $"{vpxVersionInfo.FileMajorPart}.{vpxVersionInfo.FileMinorPart}{buildPart}";
                         }
                     }
                 }
@@ -739,7 +748,14 @@ Default.RevertX7=VPinballX74.exe
                     LogToFile($"Could not read file version from \"{vpxCommand}\": {e.Message}. Using fallback {fallbackLauncherVersion}.");
                 }
 
-                ConfigSection configSection = configFileFromPath[$"VPinballX.starter.{launcherFileVersion}"]??configFileFromPath["VPinballX.starter"];
+                // Version specific section: full form first (e.g. 10.8.1), then compact form (e.g. 10.81), then base section.
+                // Note: the indexer returns an empty section (not null) for missing names, so check Sections explicitly.
+                string versionSectionName = "VPinballX.starter";
+                if (configFileFromPath.Sections.Any(s => s.SectionName.Equals($"VPinballX.starter.{launcherFileVersion}", StringComparison.OrdinalIgnoreCase)))
+                    versionSectionName = $"VPinballX.starter.{launcherFileVersion}";
+                else if (configFileFromPath.Sections.Any(s => s.SectionName.Equals($"VPinballX.starter.{launcherFileVersionShort}", StringComparison.OrdinalIgnoreCase)))
+                    versionSectionName = $"VPinballX.starter.{launcherFileVersionShort}";
+                ConfigSection configSection = configFileFromPath[versionSectionName];
                 if (configSection != null)
                 {
                     foreach (var key in configSection.Keys)
@@ -756,7 +772,7 @@ Default.RevertX7=VPinballX74.exe
                             }
                         }
 
-                        else if (key.Name.StartsWith("AddPATH"))
+                        else if (key.Name.StartsWith("AddPath"))
                         {
                             if ( (key.Name.Contains(".") && tableFilename.Contains(key.Name.Split(".").Last()) ) || ! key.Name.Contains("."))
                             {

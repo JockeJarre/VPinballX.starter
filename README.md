@@ -31,6 +31,9 @@ POSTcmdExtension=.post.cmd
 ; Add parameters to the command line
 AddParameter=-Primary
 AddParameter.-play=-Minimized
+; Remove parameters from the command line
+RemoveParameter=-VR
+RemoveParameter.-play=-Windowed
 
 [TableNameExceptions]
 ;If left string is found in the Table filename
@@ -132,20 +135,29 @@ POSTcmdExtension.explorer=.explorerpost.cmd
 
 **Be sure to not start anything in these cmd batch files which block the script!**
 
-# Adding VPX parameters and PATH setting
+# Adding and removing VPX parameters and PATH setting
 
-It is possible to add parameters to the VPX calls by setting certain Configuration options:
+It is possible to add and remove parameters of the VPX calls by setting certain Configuration options:
 
 ``` ini
 ; Add parameters to the command line
 AddParameter=-Primary
 AddParameter.-play=-Minimized
+; Remove parameters from the command line
+RemoveParameter=-VR
+RemoveParameter.-play=-Windowed
+; Remove a parameter together with a following value (each space separated part is one argument pattern)
+RemoveParameter=-screen [0-9]+
 ; Prepend directories to the PATH for the started VPX process (; separated)
 AddPath=C:\Tools\VPX
 AddPath.TableSuffix=C:\Tools\VPXSpecial
 ```
 
 AddParameter on it's own means it is always added independent on other command line options. `AddParameter.-play` means that the parameters are only added if the current command line contain `-play`. The above example set VPX to use the Primary screen and when started as "play", the VPX windows is minimized.
+
+RemoveParameter works the same way, the patterns are **regular expressions** (case insensitive, the whole argument must match) and all matching arguments are removed from the command line before starting VPX, e.g. to drop a parameter the caller (PinballX, Pinup Popper, ...) added. `RemoveParameter` on its own is always removed, `RemoveParameter.-play` only removes when the current command line contains `-play`.
+
+Each space separated part of the value matches one argument. If the first pattern matches, the following patterns are tried against the following arguments, so `RemoveParameter=-screen [0-9]+` removes `-screen` together with a following number. Parameters are added and removed in the order the options appear in the ini file. Be careful with broad patterns like `.*\.vpx`, they also match the table filename and VPX would start without a table.
 
 AddPath works the same way but amends the PATH environment of the started VPX process instead. `AddPath` on its own is always prepended, `AddPath.<text>` is only prepended when the table filename contains `<text>`.
 

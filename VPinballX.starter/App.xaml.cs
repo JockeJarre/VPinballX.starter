@@ -495,6 +495,13 @@ FirstArgTableName=true
 #AddParameter=-Primary
 ; Add parameter only when '-play' is already in the command line parameters
 #AddParameter.-play=-Minimized
+; Remove parameters from the command line (regular expressions, case insensitive, full argument match)
+#RemoveParameter=-VR
+; Remove parameter only when '-play' is already in the command line parameters
+#RemoveParameter.-play=-Windowed
+; Remove a parameter together with a following value, e.g. '-screen' and its number
+#RemoveParameter=-screen [0-9]+
+; Do not match the table filename, VPX would start without a table!
 
 ; Prepend directories to the PATH for the started VPX process (; separated)
 #AddPath=C:\Tools\VPX
@@ -769,6 +776,36 @@ Default.RevertX7=VPinballX74.exe
                                     mArgs.Add(parameter);
                                 }
                                 LogToFile($"Amend \"{key.Name}\" setting to the call parameters: {String.Join(" ", mArgs)}");
+                            }
+                        }
+
+                        else if (key.Name.StartsWith("RemoveParameter"))
+                        {
+                            if ( (key.Name.Contains(".") && mArgs.Contains(key.Name.Split(".").Last()) ) || ! key.Name.Contains("."))
+                            {
+                                List<string> patterns = StripQuotes(configSection[key.Name]).Split(" ", StringSplitOptions.RemoveEmptyEntries).ToList();
+                                List<string> removedParameters = new List<string>();
+                                for (int i = 0; i < mArgs.Count && patterns.Count > 0; i++)
+                                {
+                                    if (!ParameterMatches(mArgs[i], patterns[0]))
+                                        continue;
+
+                                    // Greedily match the following patterns against the following arguments (e.g. "-play *.vpx")
+                                    int span = 1;
+                                    for (int p = 1; p < patterns.Count; p++)
+                                    {
+                                        if (i + p < mArgs.Count && ParameterMatches(mArgs[i + p], patterns[p]))
+                                            span++;
+                                        else
+                                            break;
+                                    }
+
+                                    removedParameters.Add($"{String.Join(" ", mArgs.GetRange(i, span))} ({String.Join(" ", patterns.GetRange(0, span))})");
+                                    mArgs.RemoveRange(i, span);
+                                    i--;
+                                }
+                                if (removedParameters.Count > 0)
+                                    LogToFile($"Removed \"{String.Join("; ", removedParameters)}\" from the call parameters: {String.Join(" ", mArgs)}");
                             }
                         }
 
@@ -1171,6 +1208,23 @@ Default.RevertX7=VPinballX74.exe
                 .Replace("\\", "\\\\")
                 .Replace("{", "\\{")
                 .Replace("}", "\\}");
+        }
+
+        static bool ParameterMatches(string argument, string pattern)
+        {
+            if (string.IsNullOrEmpty(pattern))
+                return false;
+
+            try
+            {
+                // The argument is removed when it fully matches the regular expression (case insensitive)
+                return System.Text.RegularExpressions.Regex.IsMatch(argument, $"^(?:{pattern})$", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+            }
+            catch (System.Text.RegularExpressions.RegexParseException e)
+            {
+                LogToFile($"\"{pattern}\" is not a valid regular expression, ignoring: {e.Message}");
+                return false;
+            }
         }
 
         bool FileOrDirectoryExists(string name)

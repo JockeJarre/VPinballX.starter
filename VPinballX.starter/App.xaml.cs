@@ -1210,7 +1210,7 @@ Default.RevertX7=VPinballX74.exe
                 .Replace("}", "\\}");
         }
 
-        static bool ParameterMatches(string argument, string pattern)
+        bool ParameterMatches(string argument, string pattern)
         {
             if (string.IsNullOrEmpty(pattern))
                 return false;
